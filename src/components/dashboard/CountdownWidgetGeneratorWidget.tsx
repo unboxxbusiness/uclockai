@@ -150,18 +150,26 @@ export default function CountdownWidgetGeneratorWidget() {
 </div>
 <script>
   (function() {
+    console.log("[Widget Script] Initializing countdown widget ${widgetId}...");
     const targetDateStr = "${targetDateTime}";
+    console.log("[Widget Script] Raw targetDateStr from config: '", targetDateStr, "'");
+
+    const widgetContainerElement = document.getElementById('${widgetId}-container');
+
     if (!targetDateStr) {
-      console.error("Uclock Countdown Widget: Target date/time not set.");
-      const container = document.getElementById('${widgetId}-container');
-      if (container) container.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Target date not set.</p>";
+      console.error("Uclock Countdown Widget (${widgetId}): Target date/time string is empty or not provided.");
+      if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Target date/time not set in configuration.</p>";
       return;
     }
+
     const targetDate = new Date(targetDateStr).getTime();
+    console.log("[Widget Script] Parsed targetDate (ms): ", targetDate, " (from string: '", targetDateStr, "')");
+    console.log("[Widget Script] Current client time (ms): ", new Date().getTime());
+
+
     if (isNaN(targetDate)) {
-      console.error("Uclock Countdown Widget: Invalid target date/time format - " + targetDateStr);
-      const container = document.getElementById('${widgetId}-container');
-      if (container) container.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format.</p>";
+      console.error("Uclock Countdown Widget (${widgetId}): Invalid target date/time format. Could not parse: '", targetDateStr, "'");
+      if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format ('" + targetDateStr + "'). Please use YYYY-MM-DDTHH:mm.</p>";
       return;
     }
     
@@ -174,30 +182,34 @@ export default function CountdownWidgetGeneratorWidget() {
     const secondsEl = document.getElementById('${widgetId}-seconds');
 
     let missingElements = [];
-    if (!timerDiv) missingElements.push('timer (internal)');
-    if (!finishedDiv) missingElements.push('finished message area (internal)');
-    if (${showDays} && !daysEl) missingElements.push('days display');
-    if (${showHours} && !hoursEl) missingElements.push('hours display');
-    if (${showMinutes} && !minutesEl) missingElements.push('minutes display');
-    if (${showSeconds} && !secondsEl) missingElements.push('seconds display');
+    if (!timerDiv) missingElements.push('timer display area (internal div: timerDiv)');
+    if (!finishedDiv) missingElements.push('finished message area (internal div: finishedDiv)');
+    if (${showDays} && !daysEl) missingElements.push('days display element (span: daysEl)');
+    if (${showHours} && !hoursEl) missingElements.push('hours display element (span: hoursEl)');
+    if (${showMinutes} && !minutesEl) missingElements.push('minutes display element (span: minutesEl)');
+    if (${showSeconds} && !secondsEl) missingElements.push('seconds display element (span: secondsEl)');
 
     if (missingElements.length > 0) {
-      console.error("Uclock Countdown Widget: Could not find all required elements. Missing: " + missingElements.join(', '));
-      const errorContainer = document.getElementById('${widgetId}-container');
-      if (errorContainer) {
-          errorContainer.innerHTML = "<p style='color:red; font-family: sans-serif; font-size: small;'>Widget Error: Could not initialize all parts. Missing: " + missingElements.join(', ') + ".</p>";
+      const errorMsg = "Uclock Countdown Widget (${widgetId}): Could not initialize all required HTML parts. Missing: " + missingElements.join(', ') + ".";
+      console.error(errorMsg);
+      if (widgetContainerElement) {
+          widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif; font-size: small;'>" + errorMsg + "</p>";
       }
       return;
     }
+    console.log("[Widget Script] All required elements found.");
 
     function updateCountdown() {
       const now = new Date().getTime();
       const distance = targetDate - now;
+      // console.log("[Widget Script] updateCountdown: now=", now, "targetDate=", targetDate, "distance=", distance);
+
 
       if (distance < 0) {
+        console.log("[Widget Script] Countdown finished or target is in the past.");
         clearInterval(interval);
-        timerDiv.style.display = 'none';
-        finishedDiv.style.display = 'block';
+        if (timerDiv) timerDiv.style.display = 'none';
+        if (finishedDiv) finishedDiv.style.display = 'block';
         return;
       }
 
@@ -205,21 +217,24 @@ export default function CountdownWidgetGeneratorWidget() {
       const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((distance % (1000 * 60)) / 1000);
+      // console.log("[Widget Script] Calculated d/h/m/s: ", d,h,m,s);
 
-      if (${showDays} && daysEl) daysEl.textContent = d;
-      if (${showHours} && hoursEl) hoursEl.textContent = h;
-      if (${showMinutes} && minutesEl) minutesEl.textContent = m;
-      if (${showSeconds} && secondsEl) secondsEl.textContent = s;
+      if (${showDays} && daysEl) daysEl.textContent = String(d);
+      if (${showHours} && hoursEl) hoursEl.textContent = String(h);
+      if (${showMinutes} && minutesEl) minutesEl.textContent = String(m);
+      if (${showSeconds} && secondsEl) secondsEl.textContent = String(s);
     }
 
+    console.log("[Widget Script] Starting countdown interval...");
     const interval = setInterval(updateCountdown, 1000);
-    updateCountdown(); // Initial call
+    updateCountdown(); // Initial call to display immediately
   })();
 </script>
     `.trim().replace(/\n\s*/g, ''); // Minify slightly for embed code
   }, []);
 
   useEffect(() => {
+    // console.log("[React Log] Generating embed code with targetDateTime:", config.targetDateTime); 
     const code = generateEmbedCode(config);
     setEmbedCode(code);
     setPreviewHtml(code); 
