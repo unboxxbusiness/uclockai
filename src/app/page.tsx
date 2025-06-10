@@ -1,7 +1,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench } from 'lucide-react';
 import Link from 'next/link';
 
 const toolCategories = [
@@ -25,6 +25,14 @@ const toolCategories = [
       { id: 'worldClock', title: 'World Clock', Icon: Clock, href: '/world-clock', description: 'View current times across different timezones globally.' },
       { id: 'localTimeConverter', title: 'Local Time Converter', Icon: Globe, href: '/local-time-converter', description: 'Convert your local time to any other timezone.' },
     ]
+  },
+  {
+    id: 'customizationExport',
+    name: 'Customization & Export',
+    Icon: Wrench, // Using Wrench for customization/tools category
+    tools: [
+      { id: 'widgetGenerator', title: 'Time Widget Generator', Icon: Settings2, href: '/widget-generator', description: 'Create embeddable time widgets for your website.' },
+    ]
   }
 ];
 
@@ -38,7 +46,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <Accordion type="multiple" className="w-full max-w-3xl mx-auto space-y-4">
+      <Accordion type="multiple" defaultValue={['timeManagement']} className="w-full max-w-3xl mx-auto space-y-4">
         {toolCategories.map(category => (
           <AccordionItem value={category.id} key={category.id} className="border bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
             <AccordionTrigger className="p-6 hover:no-underline text-left">

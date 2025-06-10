@@ -14,7 +14,7 @@ import {
   SidebarTrigger
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe, BellRing } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe, BellRing, Settings2 } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 
 export const metadata: Metadata = {
@@ -36,6 +36,7 @@ export default function RootLayout({
     { href: '/alarms', label: 'Alarms', Icon: AlarmClockIcon },
     { href: '/reminders', label: 'Reminders', Icon: BellRing },
     { href: '/local-time-converter', label: 'Local Time Converter', Icon: Globe },
+    { href: '/widget-generator', label: 'Widget Generator', Icon: Settings2 },
   ];
 
   return (
