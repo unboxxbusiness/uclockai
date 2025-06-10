@@ -14,12 +14,12 @@ import {
   SidebarTrigger
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe, BellRing } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 
 export const metadata: Metadata = {
   title: 'Uclock Ai - Smart Time Management',
-  description: 'Manage your time effectively with Uclock Ai: World Clocks, Timer, Stopwatch, Alarms, and Pomodoro Timer.',
+  description: 'Manage your time effectively with Uclock Ai: World Clocks, Timer, Stopwatch, Alarms, Pomodoro Timer, Reminders, and Local Time Converter.',
 };
 
 export default function RootLayout({
@@ -34,6 +34,7 @@ export default function RootLayout({
     { href: '/stopwatch', label: 'Stopwatch', Icon: Watch },
     { href: '/pomodoro', label: 'Pomodoro Timer', Icon: Brain },
     { href: '/alarms', label: 'Alarms', Icon: AlarmClockIcon },
+    { href: '/reminders', label: 'Reminders', Icon: BellRing },
     { href: '/local-time-converter', label: 'Local Time Converter', Icon: Globe },
   ];
 

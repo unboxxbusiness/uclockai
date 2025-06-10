@@ -1,7 +1,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing } from 'lucide-react';
 import Link from 'next/link';
 
 const toolCategories = [
@@ -14,6 +14,7 @@ const toolCategories = [
       { id: 'stopwatch', title: 'Stopwatch', Icon: Watch, href: '/stopwatch', description: 'Measure elapsed time with precision and lap functionality.' },
       { id: 'alarms', title: 'Alarms', Icon: AlarmClockIcon, href: '/alarms', description: 'Set and manage personal alarms for important reminders.' },
       { id: 'pomodoro', title: 'Pomodoro Timer', Icon: Brain, href: '/pomodoro', description: 'Boost productivity with focused work and break intervals.' },
+      { id: 'reminders', title: 'Reminders', Icon: BellRing, href: '/reminders', description: 'Set time-based reminders with smart suggestions.' },
     ]
   },
   {
