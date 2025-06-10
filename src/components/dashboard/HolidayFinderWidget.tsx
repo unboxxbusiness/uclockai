@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { holidayLookup, type HolidayLookupOutput } from '@/ai/flows/holiday-lookup';
-import { HolidayLookupInputSchema } from '@/ai/schemas/holiday-schemas'; // Updated import
-import { Loader2, CalendarDays, AlertCircle } from 'lucide-react';
+import { HolidayLookupInputSchema } from '@/ai/schemas/holiday-schemas';
+import { Loader2, CalendarDays, AlertCircle, Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, parseISO } from 'date-fns';
 import { useForm } from "react-hook-form";
@@ -112,8 +112,8 @@ export default function HolidayFinderWidget() {
       </Form>
 
       {error && (
-        <div className="text-destructive p-3 bg-destructive/10 rounded-md flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2 shrink-0" /> 
+        <div className="text-destructive p-3 bg-destructive/10 rounded-md flex items-start">
+          <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" /> 
           <p className="text-sm">{error}</p>
         </div>
       )}
@@ -141,12 +141,21 @@ export default function HolidayFinderWidget() {
              <p className="text-center text-muted-foreground p-4">
                No public holidays found for {searchedCriteria?.countryCode}
                {searchedCriteria?.year ? ` in ${searchedCriteria.year}` : ` in ${new Date().getFullYear()}`}.
-               {holidaysResult?.message ? ` ${holidaysResult.message}` : ' This might mean there are no holidays, the country code is incorrect, or the API has no data for this query.'}
+               {holidaysResult?.message && !searchedCriteria?.countryCode?.toUpperCase().startsWith('IN') ? ` ${holidaysResult.message}` : (searchedCriteria?.countryCode?.toUpperCase().startsWith('IN') && holidaysResult?.message ? '' : ' This might mean there are no holidays, the country code is incorrect, or the API has no data for this query.')}
              </p>
           )}
+
+          {holidaysResult?.message && (
+            <div className="mt-3 text-sm p-3 bg-accent/10 text-accent-foreground/90 rounded-md flex items-start">
+              <Info className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
+              <p>{holidaysResult.message}</p>
+            </div>
+          )}
+
           {holidaysResult?.dataSource && (
             <p className="text-xs text-muted-foreground mt-3 text-center px-1">
-              Holiday data provided by {holidaysResult.dataSource}. Please verify critical dates from official sources. 
+              Holiday data provided by {holidaysResult.dataSource}. 
+              {!holidaysResult?.message?.includes("India (IN)") && "Please verify critical dates from official sources."}
               The public API endpoint may have limitations.
             </p>
           )}
@@ -155,3 +164,4 @@ export default function HolidayFinderWidget() {
     </div>
   );
 }
+

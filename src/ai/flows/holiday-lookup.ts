@@ -31,6 +31,11 @@ const holidayLookupFlow = ai.defineFlow(
     const currentYear = new Date().getFullYear().toString();
     const targetYear = year || currentYear;
     const upperCaseCountryCode = countryCode.toUpperCase();
+    let advisoryMessage = '';
+
+    if (upperCaseCountryCode === 'IN') {
+      advisoryMessage = 'Holiday data for India (IN) should be verified with official sources for accuracy, as variations can occur.';
+    }
 
     try {
       const apiHolidays = await getHolidaysTool({ countryCode: upperCaseCountryCode, year: targetYear });
@@ -40,7 +45,7 @@ const holidayLookupFlow = ai.defineFlow(
         return {
             holidays: [],
             dataSource: 'Nager.Date API (Public/No-Key)',
-            message: 'Received unexpected data from the holiday API.',
+            message: advisoryMessage || 'Received unexpected data from the holiday API.',
         };
       }
       
@@ -52,12 +57,16 @@ const holidayLookupFlow = ai.defineFlow(
       return {
         holidays,
         dataSource: 'Nager.Date API (Public/No-Key)',
+        message: advisoryMessage || undefined, // Ensure message is undefined if empty, not an empty string unless it's the advisory
       };
     } catch (error: any) {
       console.error(`Error in holidayLookupFlow while fetching holidays for ${upperCaseCountryCode}, ${targetYear}:`, error);
       // Let the widget handle displaying the error message passed from the tool or flow.
       // This ensures the UI can inform the user about specific issues.
-      throw new Error(`Failed to retrieve holidays: ${error.message}`);
+      // Prepend advisory message if it exists
+      const errorMessage = advisoryMessage ? `${advisoryMessage} Additionally, an error occurred: ` : '';
+      throw new Error(`${errorMessage}Failed to retrieve holidays: ${error.message}`);
     }
   }
 );
+
