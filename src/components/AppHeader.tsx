@@ -1,14 +1,14 @@
-import { TimerIcon } from 'lucide-react';
+
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export default function AppHeader() {
   return (
-    <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center">
-        <TimerIcon className="h-8 w-8 text-primary mr-3" />
-        <h1 className="text-2xl font-headline font-semibold text-primary">
-          Uclock Ai
-        </h1>
+    <header className="bg-card border-b border-border shadow-sm sticky top-0 z-40 h-16 flex items-center px-4 md:px-6">
+      <SidebarTrigger className="md:hidden mr-4" />
+      <div className="flex-grow">
+        {/* Future content like breadcrumbs or dynamic page titles can go here */}
       </div>
+      {/* User profile / settings icon could go here */}
     </header>
   );
 }
