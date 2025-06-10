@@ -150,7 +150,21 @@ export default function CountdownWidgetGeneratorWidget() {
 </div>
 <script>
   (function() {
-    const targetDate = new Date("${targetDateTime}").getTime();
+    const targetDateStr = "${targetDateTime}";
+    if (!targetDateStr) {
+      console.error("Uclock Countdown Widget: Target date/time not set.");
+      const container = document.getElementById('${widgetId}-container');
+      if (container) container.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Target date not set.</p>";
+      return;
+    }
+    const targetDate = new Date(targetDateStr).getTime();
+    if (isNaN(targetDate)) {
+      console.error("Uclock Countdown Widget: Invalid target date/time format - " + targetDateStr);
+      const container = document.getElementById('${widgetId}-container');
+      if (container) container.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format.</p>";
+      return;
+    }
+    
     const timerDiv = document.getElementById('${widgetId}-timer');
     const finishedDiv = document.getElementById('${widgetId}-finished');
     
@@ -159,17 +173,20 @@ export default function CountdownWidgetGeneratorWidget() {
     const minutesEl = document.getElementById('${widgetId}-minutes');
     const secondsEl = document.getElementById('${widgetId}-seconds');
 
-    if (!timerDiv || !finishedDiv ${showDays ? '|| !daysEl':''} ${showHours ? '|| !hoursEl':''} ${showMinutes ? '|| !minutesEl':''} ${showSeconds ? '|| !secondsEl':''}) {
-      // Element check depends on which units are shown
-      let missingElements = [];
-      if (!timerDiv) missingElements.push('timerDiv');
-      if (!finishedDiv) missingElements.push('finishedDiv');
-      if (${showDays} && !daysEl) missingElements.push('daysEl');
-      if (${showHours} && !hoursEl) missingElements.push('hoursEl');
-      if (${showMinutes} && !minutesEl) missingElements.push('minutesEl');
-      if (${showSeconds} && !secondsEl) missingElements.push('secondsEl');
+    let missingElements = [];
+    if (!timerDiv) missingElements.push('timer (internal)');
+    if (!finishedDiv) missingElements.push('finished message area (internal)');
+    if (${showDays} && !daysEl) missingElements.push('days display');
+    if (${showHours} && !hoursEl) missingElements.push('hours display');
+    if (${showMinutes} && !minutesEl) missingElements.push('minutes display');
+    if (${showSeconds} && !secondsEl) missingElements.push('seconds display');
+
+    if (missingElements.length > 0) {
       console.error("Uclock Countdown Widget: Could not find all required elements. Missing: " + missingElements.join(', '));
-      if(timerDiv) timerDiv.innerHTML = "<p style='color:red;'>Error: Widget elements missing.</p>";
+      const errorContainer = document.getElementById('${widgetId}-container');
+      if (errorContainer) {
+          errorContainer.innerHTML = "<p style='color:red; font-family: sans-serif; font-size: small;'>Widget Error: Could not initialize all parts. Missing: " + missingElements.join(', ') + ".</p>";
+      }
       return;
     }
 
@@ -205,9 +222,7 @@ export default function CountdownWidgetGeneratorWidget() {
   useEffect(() => {
     const code = generateEmbedCode(config);
     setEmbedCode(code);
-    // Use a key for the iframe to force re-render on config change
-    const previewKey = `preview-${JSON.stringify(config)}`; 
-    setPreviewHtml(`<div key="${previewKey}">${code}</div>`);
+    setPreviewHtml(code); 
   }, [config, generateEmbedCode]);
 
   const handleConfigChange = (field: keyof CountdownWidgetConfig, value: any) => {
@@ -264,6 +279,7 @@ export default function CountdownWidgetGeneratorWidget() {
               value={config.targetDateTime} 
               onChange={(e) => handleConfigChange('targetDateTime', e.target.value)} 
               className="mt-1"
+              required
             />
           </div>
           <div>
@@ -384,7 +400,7 @@ export default function CountdownWidgetGeneratorWidget() {
                       <style> body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100px; } </style>
                     </head>
                     <body>
-                      ${embedCode}
+                      ${previewHtml}
                     </body>
                   </html>
                 `}
@@ -420,3 +436,4 @@ export default function CountdownWidgetGeneratorWidget() {
     </div>
   );
 }
+
