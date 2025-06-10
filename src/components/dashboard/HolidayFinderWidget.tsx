@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { holidayLookup, type HolidayLookupOutput, HolidayLookupInputSchema } from '@/ai/flows/holiday-lookup';
+import { holidayLookup, type HolidayLookupOutput } from '@/ai/flows/holiday-lookup';
+import { HolidayLookupInputSchema } from '@/ai/schemas/holiday-schemas'; // Updated import
 import { Loader2, CalendarDays, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, parseISO } from 'date-fns';
