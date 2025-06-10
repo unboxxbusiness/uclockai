@@ -22,6 +22,7 @@ const toolCategories = [
     Icon: Globe,
     tools: [
       { id: 'worldClock', title: 'World Clock', Icon: Clock, href: '/world-clock', description: 'View current times across different timezones globally.' },
+      { id: 'localTimeConverter', title: 'Local Time Converter', Icon: Globe, href: '/local-time-converter', description: 'Convert your local time to any other timezone.' },
     ]
   }
 ];
