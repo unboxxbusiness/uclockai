@@ -37,11 +37,11 @@ export default function HolidayFinderWidget() {
       if (result && result.holidays) {
         setHolidays(result.holidays);
       } else {
-        setHolidays([]); // Set to empty array to indicate no holidays found vs. an error
+        setHolidays([]); 
       }
     } catch (err) {
       console.error("Holiday lookup error:", err);
-      setError("Failed to fetch holidays. Please try again or check your network connection.");
+      setError("Failed to fetch holidays. The AI model might be unable to provide data for the requested location/year, or there might be a network issue. Please try again.");
       setHolidays(null);
     }
     setIsLoading(false);
@@ -89,29 +89,34 @@ export default function HolidayFinderWidget() {
       )}
 
       {holidays && !isLoading && !error && (
-        holidays.length > 0 ? (
-          <ScrollArea className="h-60 border rounded-md p-1 bg-muted/20">
-            <h3 className="text-sm font-medium my-2 text-muted-foreground px-3">
-              Public Holidays in {searchedLocation}
-              {searchedYear ? ` for ${searchedYear}` : ' (upcoming)'}:
-            </h3>
-            <ul className="space-y-1 p-2">
-              {holidays.map((holiday, index) => (
-                <li key={index} className="p-2 rounded hover:bg-muted">
-                  <p className="font-semibold text-foreground">{holiday.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {holiday.date ? format(parseISO(holiday.date), 'EEEE, MMMM do, yyyy') : 'Date not available'}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </ScrollArea>
-        ) : (
-           <p className="text-center text-muted-foreground p-4">
-             No public holidays found for {searchedLocation}
-             {searchedYear ? ` in ${searchedYear}` : ' in the upcoming months'}.
-           </p>
-        )
+        <>
+          {holidays.length > 0 ? (
+            <ScrollArea className="h-60 border rounded-md p-1 bg-muted/20">
+              <h3 className="text-sm font-medium my-2 text-muted-foreground px-3">
+                Public Holidays in {searchedLocation}
+                {searchedYear ? ` for ${searchedYear}` : ' (upcoming)'}:
+              </h3>
+              <ul className="space-y-1 p-2">
+                {holidays.map((holiday, index) => (
+                  <li key={index} className="p-2 rounded hover:bg-muted">
+                    <p className="font-semibold text-foreground">{holiday.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {holiday.date ? format(parseISO(holiday.date), 'EEEE, MMMM do, yyyy') : 'Date not available'}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
+          ) : (
+             <p className="text-center text-muted-foreground p-4">
+               No public holidays found for {searchedLocation}
+               {searchedYear ? ` in ${searchedYear}` : ' in the upcoming months, or the AI could not provide data for this specific request.'}.
+             </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-3 text-center px-1">
+            Holiday data is AI-generated and may not always be 100% accurate or complete. Please verify critical dates from official sources.
+          </p>
+        </>
       )}
     </div>
   );

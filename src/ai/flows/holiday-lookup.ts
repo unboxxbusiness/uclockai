@@ -37,6 +37,8 @@ const prompt = ai.definePrompt({
   input: {schema: HolidayLookupInputSchema},
   output: {schema: HolidayLookupOutputSchema},
   prompt: `You are a helpful assistant that provides a list of official public holidays.
+Your information should be based on the most current and verified data available to you.
+Prioritize accuracy for dates and names of holidays.
 
 Location: {{{location}}}
 {{#if year}}
@@ -47,8 +49,10 @@ Please provide holidays for the upcoming 12 months from the current date.
 {{/if}}
 
 Ensure the dates are accurate and reflect official public holidays.
-Return the list of holidays in JSON format, with dates in ISO 8601 format (YYYY-MM-DD).
+Return the list of holidays ONLY in the specified JSON format, with dates in ISO 8601 format (YYYY-MM-DD).
+Do not include any explanatory text outside of the JSON structure.
 For example: { "holidays": [ { "name": "New Year's Day", "date": "2024-01-01" } ] }
+If no official public holidays are found for the criteria, return an empty "holidays" array: { "holidays": [] }
 `,
 });
 
