@@ -37,14 +37,16 @@ const colorThemes = [
 export default function WidgetGeneratorWidget() {
   const { toast } = useToast();
   const allTimezones = useMemo(() => getTimezones(), []);
-  const [selectedThemeName, setSelectedThemeName] = useState<string>(colorThemes[0].name);
+  
+  const defaultTheme = colorThemes.find(theme => theme.name === 'Charcoal & Yellow') || colorThemes[0];
+  const [selectedThemeName, setSelectedThemeName] = useState<string>(defaultTheme.name);
 
   const [config, setConfig] = useState<WidgetConfig>({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     hourFormat: '12h',
     showSeconds: true,
-    textColor: colorThemes[0].textColor,
-    backgroundColor: colorThemes[0].backgroundColor,
+    textColor: defaultTheme.textColor,
+    backgroundColor: defaultTheme.backgroundColor,
     clockType: 'digital',
   });
   const [embedCode, setEmbedCode] = useState('');
@@ -56,9 +58,10 @@ export default function WidgetGeneratorWidget() {
 
     let clockHtml = '';
     let clockScript = '';
+    const analogClockSize = 100; // viewBox size
 
     if (currentConfig.clockType === 'digital') {
-      clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold;"></span>`;
+      clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: 'Segment7', 'Roboto Mono', monospace;"></span>`;
       clockScript = `
         const timeElement = document.getElementById('${widgetId}-time');
         if (!timeElement) {
@@ -89,28 +92,26 @@ export default function WidgetGeneratorWidget() {
         return updateDigitalTime;
       `;
     } else { // Analog clock
-      const analogClockSize = 100; // viewBox size, can be scaled by container
       clockHtml = `
         <svg id="${widgetId}-svg" width="100%" height="100%" viewBox="0 0 ${analogClockSize} ${analogClockSize}" style="display: block; margin: auto; max-width: 150px; max-height: 150px;">
           <circle cx="${analogClockSize / 2}" cy="${analogClockSize / 2}" r="${analogClockSize * 0.48}" stroke="${currentConfig.textColor}" stroke-width="2" fill="${currentConfig.backgroundColor}" />
           
-          // Tick marks
           ${Array.from({ length: 12 }).map((_, i) => `
             <line 
               x1="${analogClockSize / 2}" 
               y1="${analogClockSize * 0.05}" 
               x2="${analogClockSize / 2}" 
-              y2="${analogClockSize * 0.10}" 
+              y2="${analogClockSize * (i % 3 === 0 ? 0.12 : 0.09)}" 
               stroke="${currentConfig.textColor}" 
-              stroke-width="${i % 3 === 0 ? 2 : 1}" 
+              stroke-width="${i % 3 === 0 ? 2 : 1.5}" 
               transform="rotate(${i * 30} ${analogClockSize / 2} ${analogClockSize / 2})" 
             />
           `).join('')}
           
-          <line id="${widgetId}-hour" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.25}" stroke="${currentConfig.textColor}" stroke-width="4" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>
-          <line id="${widgetId}-minute" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.15}" stroke="${currentConfig.textColor}" stroke-width="3" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>
-          ${currentConfig.showSeconds ? `<line id="${widgetId}-second" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.10}" stroke="${currentConfig.textColor}" stroke-width="1.5" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>` : ''}
-          <circle cx="${analogClockSize / 2}" cy="${analogClockSize / 2}" r="3" fill="${currentConfig.textColor}" />
+          <line id="${widgetId}-hour" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.28}" stroke="${currentConfig.textColor}" stroke-width="5" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>
+          <line id="${widgetId}-minute" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.12}" stroke="${currentConfig.textColor}" stroke-width="3.5" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>
+          ${currentConfig.showSeconds ? `<line id="${widgetId}-second" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.10}" stroke="${currentConfig.textColor}" stroke-width="2" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>` : ''}
+          <circle cx="${analogClockSize / 2}" cy="${analogClockSize / 2}" r="3.5" fill="${currentConfig.textColor}" />
         </svg>
       `;
       clockScript = `
@@ -122,15 +123,21 @@ export default function WidgetGeneratorWidget() {
 
         function updateAnalogTime() {
           const now = new Date();
-          const options = { timeZone: timezone, hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false };
-          const formatter = new Intl.DateTimeFormat('en-US', options);
-          const parts = formatter.formatToParts(now);
-          let h = 0, m = 0, s = 0;
-          parts.forEach(part => {
-            if (part.type === 'hour') h = parseInt(part.value);
-            if (part.type === 'minute') m = parseInt(part.value);
-            if (part.type === 'second') s = parseInt(part.value);
-          });
+          let h, m, s;
+          try {
+            const formatter = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false });
+            const parts = formatter.formatToParts(now);
+            h = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+            m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+            s = parseInt(parts.find(p => p.type === 'second')?.value || '0');
+          } catch (e) {
+             if (hourHand) hourHand.style.transform = 'rotate(0deg)';
+             if (minuteHand) minuteHand.style.transform = 'rotate(0deg)';
+             if (secondHand && showSeconds) secondHand.style.transform = 'rotate(0deg)';
+             console.error("Uclock Ai Widget: Error getting time parts - ", e);
+             return;
+          }
+
 
           const hourDeg = (h % 12 + m / 60) * 30;
           const minuteDeg = (m + s / 60) * 6;
@@ -146,7 +153,7 @@ export default function WidgetGeneratorWidget() {
     }
     
     return `
-<div id="${widgetId}-container" style="background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: Arial, sans-serif; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+<div id="${widgetId}-container" style="background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: Arial, sans-serif; display: inline-block; min-width: ${currentConfig.clockType === 'analog' ? '120px' : '150px'}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
   ${clockHtml}
 </div>
 <script>
@@ -181,7 +188,6 @@ export default function WidgetGeneratorWidget() {
   useEffect(() => {
     const code = generateEmbedCode(config);
     setEmbedCode(code);
-    // Add a unique key to the iframe to force re-render on config change for preview
     const previewKey = `preview-${JSON.stringify(config)}`; 
     setPreviewHtml(`<div key="${previewKey}">${code}</div>`);
   }, [config, generateEmbedCode]);
@@ -189,7 +195,7 @@ export default function WidgetGeneratorWidget() {
   const handleConfigChange = (field: keyof WidgetConfig, value: any) => {
     setConfig(prev => ({ ...prev, [field]: value }));
     if (field === 'textColor' || field === 'backgroundColor') {
-      setSelectedThemeName("Custom"); // If individual colors are changed, set theme to custom
+      setSelectedThemeName("Custom"); 
     }
   };
 
@@ -288,7 +294,7 @@ export default function WidgetGeneratorWidget() {
                 {colorThemes.map((theme) => (
                   <SelectItem key={theme.name} value={theme.name}>{theme.name}</SelectItem>
                 ))}
-                <SelectItem value="Custom" disabled={!colorThemes.find(t=>t.name === "Custom")}>Custom Colors</SelectItem>
+                <SelectItem value="Custom" disabled={selectedThemeName !== "Custom" && !colorThemes.some(t=>t.name === "Custom")}>Custom Colors</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -326,12 +332,20 @@ export default function WidgetGeneratorWidget() {
           <div className="p-4 border rounded-md bg-muted flex items-center justify-center min-h-[150px]">
             {previewHtml && (
               <iframe
-                // By changing the key, we force React to re-mount the iframe, re-running its script
                 key={JSON.stringify(config)} 
                 srcDoc={`
                   <html>
                     <head>
+                      <link rel="preconnect" href="https://fonts.googleapis.com">
+                      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                      <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&family=Segment7&display=swap" rel="stylesheet">
                       <style>
+                        @font-face {
+                          font-family: 'Segment7';
+                          src: url('https://cdn.jsdelivr.net/gh/thefoxy131/fonts@main/segment7/Segment7Standard.otf') format('opentype');
+                          font-weight: normal;
+                          font-style: normal;
+                        }
                         body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100px; }
                       </style>
                     </head>
@@ -343,7 +357,7 @@ export default function WidgetGeneratorWidget() {
                 title="Widget Preview"
                 sandbox="allow-scripts" 
                 className="w-auto h-auto border-0"
-                style={{minWidth: '180px', minHeight: '80px'}} // Ensure iframe itself has some size
+                style={{minWidth: '180px', minHeight: '80px'}}
                 scrolling="no"
               />
             )}
@@ -372,4 +386,3 @@ export default function WidgetGeneratorWidget() {
     </div>
   );
 }
-
