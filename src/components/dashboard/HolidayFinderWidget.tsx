@@ -5,99 +5,128 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { holidayLookup, type HolidayLookupOutput } from '@/ai/flows/holiday-lookup';
+import { holidayLookup, type HolidayLookupOutput, HolidayLookupInputSchema } from '@/ai/flows/holiday-lookup';
 import { Loader2, CalendarDays, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, parseISO } from 'date-fns';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+type HolidayFormValues = z.infer<typeof HolidayLookupInputSchema>;
 
 export default function HolidayFinderWidget() {
-  const [location, setLocation] = useState('');
-  const [year, setYear] = useState('');
-  const [holidays, setHolidays] = useState<HolidayLookupOutput['holidays'] | null>(null);
+  const [holidaysResult, setHolidaysResult] = useState<HolidayLookupOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchedLocation, setSearchedLocation] = useState('');
-  const [searchedYear, setSearchedYear] = useState('');
+  const [searchedCriteria, setSearchedCriteria] = useState<{ countryCode: string; year?: string } | null>(null);
 
+  const form = useForm<HolidayFormValues>({
+    resolver: zodResolver(HolidayLookupInputSchema),
+    defaultValues: {
+      countryCode: '',
+      year: '',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!location.trim()) {
-      setError("Please enter a location.");
-      return;
-    }
+  const onSubmit = async (values: HolidayFormValues) => {
     setIsLoading(true);
     setError(null);
-    setHolidays(null);
-    setSearchedLocation(location);
-    setSearchedYear(year);
+    setHolidaysResult(null);
+    setSearchedCriteria({ countryCode: values.countryCode.toUpperCase(), year: values.year });
 
     try {
-      const result = await holidayLookup({ location: location.trim(), year: year.trim() || undefined });
-      if (result && result.holidays) {
-        setHolidays(result.holidays);
-      } else {
-        setHolidays([]); 
-      }
-    } catch (err) {
+      const result = await holidayLookup({ 
+        countryCode: values.countryCode, 
+        year: values.year || undefined 
+      });
+      setHolidaysResult(result);
+    } catch (err: any) {
       console.error("Holiday lookup error:", err);
-      setError("Failed to fetch holidays. The AI model might be unable to provide data for the requested location/year, or there might be a network issue. Please try again.");
-      setHolidays(null);
+      setError(err.message || "Failed to fetch holidays. Please check the inputs or try again later.");
+      setHolidaysResult(null);
     }
     setIsLoading(false);
   };
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="location">Location</Label>
-            <Input 
-              id="location" 
-              type="text" 
-              value={location} 
-              onChange={e => setLocation(e.target.value)} 
-              placeholder="e.g., Paris, France" 
-              disabled={isLoading}
-              required
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="countryCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="countryCode">Country Code (2-letter)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="countryCode" 
+                      placeholder="e.g., US, CA, GB" 
+                      {...field} 
+                      disabled={isLoading}
+                      autoCapitalize="characters"
+                      maxLength={2}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="year">Year (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="year" 
+                      placeholder={`e.g., ${new Date().getFullYear()}`} 
+                      {...field} 
+                      disabled={isLoading}
+                      type="text"
+                      maxLength={4}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-          <div>
-            <Label htmlFor="year">Year (Optional)</Label>
-            <Input 
-              id="year" 
-              type="text" 
-              value={year} 
-              onChange={e => setYear(e.target.value)} 
-              placeholder="e.g., 2024" 
-              disabled={isLoading}
-            />
-          </div>
-        </div>
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-2 h-4 w-4" />}
-          Find Holidays
-        </Button>
-      </form>
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-2 h-4 w-4" />}
+            Find Holidays
+          </Button>
+        </form>
+      </Form>
 
       {error && (
         <div className="text-destructive p-3 bg-destructive/10 rounded-md flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2" /> 
-          {error}
+          <AlertCircle className="h-5 w-5 mr-2 shrink-0" /> 
+          <p className="text-sm">{error}</p>
         </div>
       )}
 
-      {holidays && !isLoading && !error && (
+      {holidaysResult && !isLoading && !error && (
         <>
-          {holidays.length > 0 ? (
+          {holidaysResult.holidays && holidaysResult.holidays.length > 0 ? (
             <ScrollArea className="h-60 border rounded-md p-1 bg-muted/20">
               <h3 className="text-sm font-medium my-2 text-muted-foreground px-3">
-                Public Holidays in {searchedLocation}
-                {searchedYear ? ` for ${searchedYear}` : ' (upcoming)'}:
+                Public Holidays in {searchedCriteria?.countryCode}
+                {searchedCriteria?.year ? ` for ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}:
               </h3>
               <ul className="space-y-1 p-2">
-                {holidays.map((holiday, index) => (
+                {holidaysResult.holidays.map((holiday, index) => (
                   <li key={index} className="p-2 rounded hover:bg-muted">
                     <p className="font-semibold text-foreground">{holiday.name}</p>
                     <p className="text-sm text-muted-foreground">
@@ -109,13 +138,17 @@ export default function HolidayFinderWidget() {
             </ScrollArea>
           ) : (
              <p className="text-center text-muted-foreground p-4">
-               No public holidays found for {searchedLocation}
-               {searchedYear ? ` in ${searchedYear}` : ' in the upcoming months, or the AI could not provide data for this specific request.'}.
+               No public holidays found for {searchedCriteria?.countryCode}
+               {searchedCriteria?.year ? ` in ${searchedCriteria.year}` : ` in ${new Date().getFullYear()}`}.
+               {holidaysResult?.message ? ` ${holidaysResult.message}` : ' This might mean there are no holidays, the country code is incorrect, or the API has no data for this query.'}
              </p>
           )}
-          <p className="text-xs text-muted-foreground mt-3 text-center px-1">
-            Holiday data is AI-generated and may not always be 100% accurate or complete. Please verify critical dates from official sources.
-          </p>
+          {holidaysResult?.dataSource && (
+            <p className="text-xs text-muted-foreground mt-3 text-center px-1">
+              Holiday data provided by {holidaysResult.dataSource}. Please verify critical dates from official sources. 
+              The public API endpoint may have limitations.
+            </p>
+          )}
         </>
       )}
     </div>
