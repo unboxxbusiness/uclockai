@@ -123,7 +123,7 @@ export default function HolidayFinderWidget() {
           {holidaysResult.holidays && holidaysResult.holidays.length > 0 ? (
             <ScrollArea className="h-60 border rounded-md p-1 bg-muted/20">
               <h3 className="text-sm font-medium my-2 text-muted-foreground px-3">
-                Public Holidays in {searchedCriteria?.countryCode}
+                Public Holidays in {searchedCriteria?.countryCode?.toUpperCase()}
                 {searchedCriteria?.year ? ` for ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}:
               </h3>
               <ul className="space-y-1 p-2">
@@ -139,9 +139,8 @@ export default function HolidayFinderWidget() {
             </ScrollArea>
           ) : (
              <p className="text-center text-muted-foreground p-4">
-               No public holidays found for {searchedCriteria?.countryCode}
-               {searchedCriteria?.year ? ` in ${searchedCriteria.year}` : ` in ${new Date().getFullYear()}`}.
-               {holidaysResult?.message && !searchedCriteria?.countryCode?.toUpperCase().startsWith('IN') ? ` ${holidaysResult.message}` : (searchedCriteria?.countryCode?.toUpperCase().startsWith('IN') && holidaysResult?.message ? '' : ' This might mean there are no holidays, the country code is incorrect, or the API has no data for this query.')}
+               No public holidays found for {searchedCriteria?.countryCode?.toUpperCase()}
+               {searchedCriteria?.year ? ` in ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}.
              </p>
           )}
 
@@ -155,8 +154,7 @@ export default function HolidayFinderWidget() {
           {holidaysResult?.dataSource && (
             <p className="text-xs text-muted-foreground mt-3 text-center px-1">
               Holiday data provided by {holidaysResult.dataSource}. 
-              {!holidaysResult?.message?.includes("India (IN)") && "Please verify critical dates from official sources."}
-              The public API endpoint may have limitations.
+              The public API endpoint may have limitations. It is recommended to verify critical dates from official sources, especially if the API indicates limited data for a specific region or year.
             </p>
           )}
         </>
@@ -164,4 +162,3 @@ export default function HolidayFinderWidget() {
     </div>
   );
 }
-
