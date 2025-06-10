@@ -2,5 +2,5 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/holiday-lookup.ts';
-import '@/ai/tools/get-holidays-tool.ts';
+// Removed imports for holiday-lookup.ts and get-holidays-tool.ts
+// as they are no longer part of the project.

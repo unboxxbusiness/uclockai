@@ -1,7 +1,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Timer as TimerIcon, Watch, CalendarDays, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain } from 'lucide-react';
 import Link from 'next/link';
 
 const toolCategories = [
@@ -13,6 +13,7 @@ const toolCategories = [
       { id: 'timer', title: 'Timer', Icon: TimerIcon, href: '/timer', description: 'Set countdown timers for your tasks and activities.' },
       { id: 'stopwatch', title: 'Stopwatch', Icon: Watch, href: '/stopwatch', description: 'Measure elapsed time with precision and lap functionality.' },
       { id: 'alarms', title: 'Alarms', Icon: AlarmClockIcon, href: '/alarms', description: 'Set and manage personal alarms for important reminders.' },
+      { id: 'pomodoro', title: 'Pomodoro Timer', Icon: Brain, href: '/pomodoro', description: 'Boost productivity with focused work and break intervals.' },
     ]
   },
   {
@@ -21,7 +22,6 @@ const toolCategories = [
     Icon: Globe,
     tools: [
       { id: 'worldClock', title: 'World Clock', Icon: Clock, href: '/world-clock', description: 'View current times across different timezones globally.' },
-      { id: 'holidayFinder', title: 'Holiday Finder', Icon: CalendarDays, href: '/holiday-finder', description: 'Discover public holidays for any location worldwide.' },
     ]
   }
 ];
