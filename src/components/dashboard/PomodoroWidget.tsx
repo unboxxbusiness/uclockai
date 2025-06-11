@@ -45,17 +45,19 @@ export default function PomodoroWidget() {
   }, [mode, isRunning]);
 
   useEffect(() => {
- if (typeof window !== 'undefined') {
-    // Update browser title with time left
-    if (isRunning) {
-      document.title = `${formatTime(timeLeft)} - ${MODES[mode].label} | Uclock Ai`;
-    } else {
- if (document.title !== `Uclock Ai - Smart Time Management`) {
+    // Update browser title with time left - This effect only runs on the client
+    if (typeof window !== 'undefined') {
+      if (isRunning) {
+        document.title = `${formatTime(timeLeft)} - ${MODES[mode].label} | Uclock Ai`;
+      } else {
+        if (document.title !== `Uclock Ai - Smart Time Management`) {
+          document.title = `Uclock Ai - Smart Time Management`;
+        }
+      }
+      return () => {
       document.title = `Uclock Ai - Smart Time Management`;
- }
+      }; // Cleanup on unmount
     }
-    return () => { document.title = `Uclock Ai - Smart Time Management`; }; // Cleanup on unmount
- }
   }, [timeLeft, isRunning, mode]);
 
 
@@ -66,7 +68,8 @@ export default function PomodoroWidget() {
       description: mode === 'pomodoro' ? `Time for a break!` : `Time to get back to focus!`,
     });
 
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    // Send browser notification - This only runs on the client
+    if (typeof window !== "undefined" && typeof Notification !== 'undefined' && Notification.permission === "granted") {
       new Notification(`${MODES[mode].label} Finished!`, {
         body: mode === 'pomodoro' ? `Time for a break!` : `Time to get back to focus!`,
         icon: '/favicon.ico' // Replace with your actual favicon path or a relevant icon URL
@@ -97,7 +100,7 @@ export default function PomodoroWidget() {
 
 
   const requestNotificationPermission = () => {
-    if (typeof window !== "undefined" && "Notification" in window) {
+    if (typeof window !== "undefined" && typeof Notification !== 'undefined') {
       if (Notification.permission !== "granted" && Notification.permission !== "denied") {
         Notification.requestPermission().then(permission => {
           if (permission === "granted") {
@@ -197,7 +200,8 @@ export default function PomodoroWidget() {
       <p className="text-sm text-muted-foreground mt-4">
         Pomodoros completed: {pomodorosCompleted}
       </p>
- {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied" && (
+      {/* Conditionally render notification permission button on client-side */}
+      {typeof window !== "undefined" && typeof Notification !== 'undefined' && Notification.permission !== "granted" && Notification.permission !== "denied" && (
         <Button variant="link" onClick={requestNotificationPermission} className="text-xs mt-2">
             Enable browser notifications
         </Button>

@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home as HomeIcon, Brain, Globe, BellRing, Settings2, CalendarDays } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://uclock.ai'; // Fallback, ideally set NEXT_PUBLIC_SITE_URL in .env
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://uclockai.vercel.app/'; // Fallback, ideally set NEXT_PUBLIC_SITE_URL in .env
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
