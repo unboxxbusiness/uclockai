@@ -14,7 +14,7 @@ import {
   SidebarTrigger
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe, BellRing, Settings2, Hourglass, MonitorSmartphone } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe, BellRing, Settings2, Hourglass } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default function RootLayout({
     { href: '/local-time-converter', label: 'Local Time Converter', Icon: Globe },
     { href: '/widget-generator', label: 'Time Widget Generator', Icon: Settings2 },
     { href: '/countdown-widget-generator', label: 'Countdown Widget Gen.', Icon: Hourglass },
-    { href: '/sleek-clock', label: 'Sleek Clock', Icon: MonitorSmartphone },
+    // { href: '/sleek-clock', label: 'Sleek Clock', Icon: MonitorSmartphone }, // Removed as per request
   ];
 
   return (
