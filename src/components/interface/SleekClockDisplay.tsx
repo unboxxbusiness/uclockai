@@ -104,7 +104,7 @@ export default function SleekClockDisplay() {
     fetchWeather();
   }, []);
 
-  const timeFormatted = format(currentTime, 'HH:mm:ss');
+  const timeFormatted = format(currentTime, 'hh:mm:ss a');
   const dateFormatted = format(currentTime, 'eeee, MMMM do, yyyy');
   
   const weatherInfo = weather ? getWeatherInfoFromCode(weather.weathercode) : null;
@@ -116,9 +116,9 @@ export default function SleekClockDisplay() {
         {/* Time */}
         <div className="text-center">
           <h1 className="text-6xl sm:text-7xl md:text-8xl font-bold text-primary tracking-tight tabular-nums">
-            {timeFormatted.substring(0, 5)}
-            <span className="text-4xl sm:text-5xl md:text-6xl text-primary/70 tabular-nums">
-              {timeFormatted.substring(5)}
+            {timeFormatted.substring(0, 8)} {/* hh:mm:ss */}
+            <span className="text-4xl sm:text-5xl md:text-6xl text-primary/70 tabular-nums ml-1">
+              {timeFormatted.substring(9)} {/* AM/PM */}
             </span>
           </h1>
         </div>
