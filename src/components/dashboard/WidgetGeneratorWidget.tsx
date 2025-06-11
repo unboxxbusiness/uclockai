@@ -49,7 +49,7 @@ const getFontFamilyCss = (fontFamily: WidgetConfigFontFamily): string => {
     case 'Roboto Mono':
       return "'Roboto Mono', monospace";
     case 'Segment7':
-      return "'Segment7', 'Roboto Mono', monospace";
+      return "'Segment7', 'Roboto Mono', monospace"; // Fallback for Segment7
     default:
       return "Arial, sans-serif"; 
   }
@@ -86,16 +86,16 @@ export default function WidgetGeneratorWidget() {
 
 
   const generateEmbedCode = useCallback((currentConfig: WidgetConfig): string => {
-    if (!currentConfig.timezone) {
+    if (previewLoading || !currentConfig.timezone) { 
       return "<p>Initializing settings...</p>";
     }
     const widgetId = `uclock-ai-widget-${Date.now()}`;
     const jsHourFormat = currentConfig.hourFormat === '12h' ? 'true' : 'false';
     const currentFontFamilyCss = getFontFamilyCss(currentConfig.fontFamily);
 
+    let finalMainContainerStyle: string;
     let finalClockHtml: string;
     let finalClockScript: string;
-    let finalMainContainerStyle: string;
 
     if (currentConfig.clockType === 'digital') {
       const digitalTimeDisplayFont = getFontFamilyCss('Segment7'); 
@@ -159,13 +159,13 @@ export default function WidgetGeneratorWidget() {
             let formattedTime = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
             
             if (use12HourFormat) {
-              const match = formattedTime.match(/(\\\\S+)\\\\s?(AM|PM)/i);
+              const match = formattedTime.match(/(\\S+)\\s?(AM|PM)/i); // Script gets \\S and \\s
               if (match && match[1] && match[2]) {
                 timeElement.textContent = match[1];
                 ampmElement.textContent = match[2];
                 ampmElement.style.display = 'inline';
               } else {
-                timeElement.textContent = formattedTime.replace(/\\\\s?(AM|PM)$/i, '').trim();
+                timeElement.textContent = formattedTime.replace(/\\s?(AM|PM)$/i, '').trim(); // Script gets \\s
                 const amPmMatch = formattedTime.match(/(AM|PM)$/i);
                 if (amPmMatch && amPmMatch[1]) {
                    ampmElement.textContent = amPmMatch[1];
@@ -197,7 +197,10 @@ export default function WidgetGeneratorWidget() {
         return updateSleekTime;
       `;
     } else {
-      return `<p style="color: red; font-family: sans-serif;">Error: Unknown clock type configured ('${currentConfig.clockType}').</p>`;
+      // Fallback for unknown clock type
+      finalMainContainerStyle = `color: red; font-family: sans-serif; padding: 10px; border: 1px solid red;`;
+      finalClockHtml = `<p>Error: Unknown clock type configured ('${currentConfig.clockType}').</p>`;
+      finalClockScript = `console.error("Uclock Ai Widget: Unknown clock type - ${currentConfig.clockType}");`;
     }
     
     return \`
@@ -234,9 +237,9 @@ export default function WidgetGeneratorWidget() {
     }
     window.uclockAiWidgetIntervals['\${widgetId}'] = setInterval(updateTimeFunction, 1000);
   })();
-<\/script> 
+<` + `/script> 
     \`.trim();
-  }, [config]);
+  }, [config, previewLoading]);
 
   useEffect(() => {
     if (previewLoading || !config.timezone) { 
