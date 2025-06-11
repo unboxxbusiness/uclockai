@@ -10,7 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { getTimezones, type TimezoneOption } from '@/lib/timezones';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,7 +19,7 @@ interface WidgetConfig {
   showSeconds: boolean;
   textColor: string;
   backgroundColor: string;
-  clockType: 'digital' | 'analog';
+  // clockType: 'digital' | 'analog'; // Removed
 }
 
 const colorThemes = [
@@ -47,7 +46,7 @@ export default function WidgetGeneratorWidget() {
     showSeconds: true,
     textColor: defaultTheme.textColor,
     backgroundColor: defaultTheme.backgroundColor,
-    clockType: 'digital',
+    // clockType: 'digital', // Removed
   });
   const [embedCode, setEmbedCode] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
@@ -56,104 +55,40 @@ export default function WidgetGeneratorWidget() {
     const widgetId = `uclock-ai-widget-${Date.now()}`;
     const jsHourFormat = currentConfig.hourFormat === '12h' ? 'true' : 'false';
 
-    let clockHtml = '';
-    let clockScript = '';
-    const analogClockSize = 100; // viewBox size
+    // Digital clock only
+    const clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: 'Segment7', 'Roboto Mono', monospace;"></span>`;
+    const clockScript = `
+      const timeElement = document.getElementById('${widgetId}-time');
+      if (!timeElement) {
+        console.error("Uclock Ai Widget: Time element not found.");
+        return;
+      }
+      const timezone = "${currentConfig.timezone}";
+      const use12HourFormat = ${jsHourFormat};
+      const showSeconds = ${currentConfig.showSeconds};
 
-    if (currentConfig.clockType === 'digital') {
-      clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: 'Segment7', 'Roboto Mono', monospace;"></span>`;
-      clockScript = `
-        const timeElement = document.getElementById('${widgetId}-time');
-        if (!timeElement) {
-          console.error("Uclock Ai Widget: Time element not found.");
-          return;
+      function updateDigitalTime() {
+        const now = new Date();
+        const options = {
+          timeZone: timezone,
+          hour12: use12HourFormat,
+          hour: '2-digit',
+          minute: '2-digit',
+          ...(showSeconds && { second: '2-digit' })
+        };
+        try {
+          timeElement.textContent = new Intl.DateTimeFormat('en-US', options).format(now);
+        } catch (e) {
+          timeElement.textContent = 'Error';
+          console.error("Uclock Ai Widget: Error formatting time - ", e);
         }
-        const timezone = "${currentConfig.timezone}";
-        const use12HourFormat = ${jsHourFormat};
-        const showSeconds = ${currentConfig.showSeconds};
-
-        function updateDigitalTime() {
-          const now = new Date();
-          const options = {
-            timeZone: timezone,
-            hour12: use12HourFormat,
-            hour: '2-digit',
-            minute: '2-digit',
-            ...(showSeconds && { second: '2-digit' })
-          };
-          try {
-            timeElement.textContent = new Intl.DateTimeFormat('en-US', options).format(now);
-          } catch (e) {
-            timeElement.textContent = 'Error';
-            console.error("Uclock Ai Widget: Error formatting time - ", e);
-          }
-        }
-        updateDigitalTime(); // Initial call
-        return updateDigitalTime;
-      `;
-    } else { // Analog clock
-      clockHtml = `
-        <svg id="${widgetId}-svg" width="100%" height="100%" viewBox="0 0 ${analogClockSize} ${analogClockSize}" style="display: block; margin: auto; max-width: 150px; max-height: 150px;">
-          <circle cx="${analogClockSize / 2}" cy="${analogClockSize / 2}" r="${analogClockSize * 0.48}" stroke="${currentConfig.textColor}" stroke-width="2" fill="${currentConfig.backgroundColor}" />
-          
-          ${Array.from({ length: 12 }).map((_, i) => `
-            <line 
-              x1="${analogClockSize / 2}" 
-              y1="${analogClockSize * 0.05}" 
-              x2="${analogClockSize / 2}" 
-              y2="${analogClockSize * (i % 3 === 0 ? 0.12 : 0.09)}" 
-              stroke="${currentConfig.textColor}" 
-              stroke-width="${i % 3 === 0 ? 2 : 1.5}" 
-              transform="rotate(${i * 30} ${analogClockSize / 2} ${analogClockSize / 2})" 
-            />
-          `).join('')}
-          
-          <line id="${widgetId}-hour" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.28}" stroke="${currentConfig.textColor}" stroke-width="5" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>
-          <line id="${widgetId}-minute" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.12}" stroke="${currentConfig.textColor}" stroke-width="3.5" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>
-          ${currentConfig.showSeconds ? `<line id="${widgetId}-second" x1="${analogClockSize / 2}" y1="${analogClockSize / 2}" x2="${analogClockSize / 2}" y2="${analogClockSize * 0.10}" stroke="${currentConfig.textColor}" stroke-width="2" stroke-linecap="round" style="transform-origin: ${analogClockSize / 2}px ${analogClockSize / 2}px;"/>` : ''}
-          <circle cx="${analogClockSize / 2}" cy="${analogClockSize / 2}" r="3.5" fill="${currentConfig.textColor}" />
-        </svg>
-      `;
-      clockScript = `
-        const hourHand = document.getElementById('${widgetId}-hour');
-        const minuteHand = document.getElementById('${widgetId}-minute');
-        const secondHand = ${currentConfig.showSeconds ? `document.getElementById('${widgetId}-second');` : 'null'};
-        const timezone = "${currentConfig.timezone}";
-        const showSeconds = ${currentConfig.showSeconds};
-
-        function updateAnalogTime() {
-          const now = new Date();
-          let h, m, s;
-          try {
-            const formatter = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false });
-            const parts = formatter.formatToParts(now);
-            h = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-            m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-            s = parseInt(parts.find(p => p.type === 'second')?.value || '0');
-          } catch (e) {
-             if (hourHand) hourHand.style.transform = 'rotate(0deg)';
-             if (minuteHand) minuteHand.style.transform = 'rotate(0deg)';
-             if (secondHand && showSeconds) secondHand.style.transform = 'rotate(0deg)';
-             console.error("Uclock Ai Widget: Error getting time parts - ", e);
-             return;
-          }
-
-
-          const hourDeg = (h % 12 + m / 60) * 30;
-          const minuteDeg = (m + s / 60) * 6;
-          const secondDeg = s * 6;
-
-          if (hourHand) hourHand.style.transform = \`rotate(\${hourDeg}deg)\`;
-          if (minuteHand) minuteHand.style.transform = \`rotate(\${minuteDeg}deg)\`;
-          if (secondHand && showSeconds) secondHand.style.transform = \`rotate(\${secondDeg}deg)\`;
-        }
-        updateAnalogTime(); // Initial call
-        return updateAnalogTime;
-      `;
-    }
+      }
+      updateDigitalTime(); // Initial call
+      return updateDigitalTime;
+    `;
     
     return `
-<div id="${widgetId}-container" style="background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: Arial, sans-serif; display: inline-block; min-width: ${currentConfig.clockType === 'analog' ? '120px' : '150px'}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+<div id="${widgetId}-container" style="background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: Arial, sans-serif; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
   ${clockHtml}
 </div>
 <script>
@@ -192,7 +127,7 @@ export default function WidgetGeneratorWidget() {
     setPreviewHtml(`<div key="${previewKey}">${code}</div>`);
   }, [config, generateEmbedCode]);
 
-  const handleConfigChange = (field: keyof WidgetConfig, value: any) => {
+  const handleConfigChange = (field: keyof Omit<WidgetConfig, 'clockType'>, value: any) => {
     setConfig(prev => ({ ...prev, [field]: value }));
     if (field === 'textColor' || field === 'backgroundColor') {
       setSelectedThemeName("Custom"); 
@@ -230,25 +165,7 @@ export default function WidgetGeneratorWidget() {
           <CardDescription>Customize the appearance and behavior of your embeddable time widget.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div>
-            <Label htmlFor="clockType" className="mb-2 block">Clock Type</Label>
-            <RadioGroup
-              id="clockType"
-              value={config.clockType}
-              onValueChange={(value) => handleConfigChange('clockType', value as 'digital' | 'analog')}
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="digital" id="digital" />
-                <Label htmlFor="digital">Digital</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="analog" id="analog" />
-                <Label htmlFor="analog">Analog</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
+          {/* Clock Type selection removed */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="timezone">Timezone</Label>
@@ -262,11 +179,10 @@ export default function WidgetGeneratorWidget() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="hourFormat">Hour Format (Digital Only)</Label>
+              <Label htmlFor="hourFormat">Hour Format</Label>
               <Select 
                 value={config.hourFormat} 
                 onValueChange={(value) => handleConfigChange('hourFormat', value as '12h' | '24h')}
-                disabled={config.clockType === 'analog'}
               >
                 <SelectTrigger id="hourFormat"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -301,7 +217,7 @@ export default function WidgetGeneratorWidget() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="textColor">Text Color / Hands Color</Label>
+              <Label htmlFor="textColor">Text Color</Label>
               <Input 
                 id="textColor" 
                 type="color" 
@@ -311,7 +227,7 @@ export default function WidgetGeneratorWidget() {
               />
             </div>
             <div>
-              <Label htmlFor="backgroundColor">Background Color / Face Color</Label>
+              <Label htmlFor="backgroundColor">Background Color</Label>
               <Input 
                 id="backgroundColor" 
                 type="color" 
