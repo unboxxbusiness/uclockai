@@ -1,5 +1,6 @@
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function AppHeader() {
   return (
@@ -8,7 +9,7 @@ export default function AppHeader() {
       <div className="flex-grow">
         {/* Future content like breadcrumbs or dynamic page titles can go here */}
       </div>
-      {/* User profile / settings icon could go here */}
+      <ThemeToggle />
     </header>
   );
 }

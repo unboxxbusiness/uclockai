@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "next-themes";
 import {
   SidebarProvider,
   Sidebar,
@@ -48,43 +49,50 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <SidebarProvider defaultOpen={true}>
-          <Sidebar collapsible="icon" side="left" variant="sidebar" className="border-r bg-card">
-            <SidebarHeader className="p-3 flex items-center border-b h-16">
-              <Link href="/" className="flex items-center gap-2 overflow-hidden flex-grow">
-                <TimerIcon className="h-7 w-7 text-primary shrink-0" />
-                <span className="font-semibold text-lg text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">
-                  Uclock Ai
-                </span>
-              </Link>
-              <SidebarTrigger className="ml-auto hidden md:flex group-data-[collapsible=icon]:mx-auto" />
-            </SidebarHeader>
-            <SidebarContent className="p-2">
-              <SidebarMenu>
-                {navItems.map(({ href, label, Icon }) => (
-                  <SidebarMenuItem key={label}>
-                    <SidebarMenuButton asChild tooltip={{ content: label, side: "right", align: "center" }}>
-                      <Link href={href}>
-                        <Icon className="h-5 w-5" />
-                        <span>{label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarContent>
-          </Sidebar>
-          <SidebarInset>
-            <div className="flex flex-col min-h-screen">
-              <AppHeader />
-              <main className="flex-grow bg-background">{children}</main>
-              <footer className="text-center p-4 text-sm text-muted-foreground border-t bg-card">
-                Uclock Ai &copy; {new Date().getFullYear()}
-              </footer>
-              <Toaster />
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SidebarProvider defaultOpen={true}>
+            <Sidebar collapsible="icon" side="left" variant="sidebar" className="border-r bg-card">
+              <SidebarHeader className="p-3 flex items-center border-b h-16">
+                <Link href="/" className="flex items-center gap-2 overflow-hidden flex-grow">
+                  <TimerIcon className="h-7 w-7 text-primary shrink-0" />
+                  <span className="font-semibold text-lg text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">
+                    Uclock Ai
+                  </span>
+                </Link>
+                <SidebarTrigger className="ml-auto hidden md:flex group-data-[collapsible=icon]:mx-auto" />
+              </SidebarHeader>
+              <SidebarContent className="p-2">
+                <SidebarMenu>
+                  {navItems.map(({ href, label, Icon }) => (
+                    <SidebarMenuItem key={label}>
+                      <SidebarMenuButton asChild tooltip={{ content: label, side: "right", align: "center" }}>
+                        <Link href={href}>
+                          <Icon className="h-5 w-5" />
+                          <span>{label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+              <div className="flex flex-col min-h-screen">
+                <AppHeader />
+                <main className="flex-grow bg-background">{children}</main>
+                <footer className="text-center p-4 text-sm text-muted-foreground border-t bg-card">
+                  Uclock Ai &copy; {new Date().getFullYear()}
+                </footer>
+                <Toaster />
+              </div>
+            </SidebarInset>
+          </SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
