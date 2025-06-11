@@ -151,12 +151,7 @@ export default function HolidayFinderWidget() {
             </div>
           )}
 
-          {holidaysResult?.dataSource && (
-            <p className="text-xs text-muted-foreground mt-3 text-center px-1">
-              Holiday data provided by {holidaysResult.dataSource}. 
-              Public data services may have limitations. It is recommended to verify critical dates from official sources, especially if the data service indicates limited data for a specific region or year.
-            </p>
-          )}
+          {/* Removed the data source attribution paragraph that was here */}
         </>
       )}
     </div>
