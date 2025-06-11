@@ -1,7 +1,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, Hourglass, MonitorSmartphone } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, Hourglass } from 'lucide-react';
 import Link from 'next/link';
 import SleekClockDisplay from '@/components/interface/SleekClockDisplay';
 
@@ -35,14 +35,6 @@ const toolCategories = [
       { id: 'widgetGenerator', title: 'Time Widget Generator', Icon: Settings2, href: '/widget-generator', description: 'Create embeddable time widgets for your website.' },
       { id: 'countdownWidgetGenerator', title: 'Countdown Widget Generator', Icon: Hourglass, href: '/countdown-widget-generator', description: 'Generate countdown timer widgets for events.' },
     ]
-  },
-  {
-    id: 'displayInterfaces',
-    name: 'Display Interfaces',
-    Icon: MonitorSmartphone,
-    tools: [
-      { id: 'sleekClock', title: 'Sleek Clock Display Page', Icon: Clock, href: '/sleek-clock', description: 'A dedicated page for the modern digital clock interface.' },
-    ]
   }
 ];
 
@@ -66,7 +58,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <Accordion type="multiple" defaultValue={['timeManagement', 'globalUtilities', 'customizationExport', 'displayInterfaces']} className="w-full max-w-3xl mx-auto space-y-4">
+      <Accordion type="multiple" defaultValue={['timeManagement', 'globalUtilities', 'customizationExport']} className="w-full max-w-3xl mx-auto space-y-4">
         {toolCategories.map(category => (
           <AccordionItem value={category.id} key={category.id} className="border bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
             <AccordionTrigger className="p-6 hover:no-underline text-left">
