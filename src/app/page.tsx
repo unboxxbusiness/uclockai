@@ -1,9 +1,36 @@
 
+import type { Metadata } from 'next';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import SleekClockDisplay from '@/components/interface/SleekClockDisplay';
+
+export const metadata: Metadata = {
+  title: 'Home - Smart Time Management Tools', // More specific title for the home page
+  description: 'Welcome to Uclock Ai! Your central hub for intelligent time management tools. Explore World Clocks, Timers, Stopwatches, Pomodoro timers, AI-powered Reminders, Time Converters, and Holiday Finders to optimize your day.',
+  alternates: {
+    canonical: '/', // Canonical URL for the home page
+  },
+  openGraph: {
+    title: 'Uclock Ai Home - Master Your Time',
+    description: 'Discover a full suite of smart time management tools on Uclock Ai. From world clocks to AI reminders, enhance your productivity.',
+    url: '/', // Relative to metadataBase
+    images: [
+      {
+        url: 'https://placehold.co/1200x630.png?text=Uclock+Ai+Home', // Specific OG image for home page
+        width: 1200,
+        height: 630,
+        alt: 'Uclock Ai Home Page - Smart Time Management',
+      },
+    ],
+  },
+  twitter: {
+    title: 'Uclock Ai Home - Your Productivity Hub',
+    description: 'Manage your time effectively with Uclock Ai\'s smart tools. Visit our home page to get started!',
+    images: ['https://placehold.co/1200x600.png?text=Uclock+Ai+Home+Twitter'], // Specific Twitter image for home
+  },
+};
 
 const toolCategories = [
   {
@@ -42,7 +69,7 @@ export default function DashboardPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="mb-8 text-center">
-        <h2 className="text-3xl font-headline font-semibold text-foreground mb-2">Home</h2>
+        <h1 className="text-3xl font-headline font-semibold text-foreground mb-2">Home</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Welcome to Uclock Ai! Your central hub for smart time management.
         </p>

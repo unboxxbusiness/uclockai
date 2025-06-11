@@ -1,0 +1,12 @@
+# robots.txt for Uclock Ai
+# See https://www.robotstxt.org/robotstxt.html for documentation
+
+User-agent: *
+Allow: /
+
+# Disallow specific paths if needed, for example:
+# Disallow: /admin/
+# Disallow: /private/
+
+# Sitemap location (ensure you generate and keep this sitemap.xml updated)
+Sitemap: https://uclock.ai/sitemap.xml
