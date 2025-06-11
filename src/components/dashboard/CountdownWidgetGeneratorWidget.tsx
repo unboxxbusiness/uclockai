@@ -21,7 +21,7 @@ interface CountdownWidgetConfig {
   numberColor: string;
   labelColor: string;
   backgroundColor: string;
-  borderColor?: string; 
+  borderColor?: string;
   fontFamily: 'Inter' | 'Roboto Mono';
   showDays: boolean;
   showHours: boolean;
@@ -44,20 +44,21 @@ const fontOptions = [
   { value: 'Roboto Mono', label: 'Roboto Mono (Monospace)' },
 ];
 
+// Helper function defined outside the component
+const getDefaultTargetDateTime = () => {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0); // Midnight tomorrow
+  return format(tomorrow, "yyyy-MM-dd'T'HH:mm");
+};
+
 export default function CountdownWidgetGeneratorWidget() {
   const { toast } = useToast();
   const defaultTheme = countdownThemes.find(theme => theme.name === 'Midnight Glow') || countdownThemes[0];
-  
-  const getDefaultTargetDateTime = () => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0); // Midnight tomorrow
-    return format(tomorrow, "yyyy-MM-dd'T'HH:mm");
-  };
 
   const [config, setConfig] = useState<CountdownWidgetConfig>({
-    targetDateTime: getDefaultTargetDateTime(),
+    targetDateTime: '', // Initialize as empty
     title: 'Countdown!',
     themeName: defaultTheme.name,
     titleColor: defaultTheme.titleColor,
@@ -73,63 +74,79 @@ export default function CountdownWidgetGeneratorWidget() {
     finishedText: "Time's Up!",
   });
   const [embedCode, setEmbedCode] = useState('');
-  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewHtml, setPreviewHtml] = useState(
+    `<div style="font-family: sans-serif; text-align: center; padding: 20px; color: #777;">Initializing settings...</div>`
+  );
+
+  // Set initial targetDateTime on client mount
+  useEffect(() => {
+    setConfig(prev => ({
+      ...prev,
+      targetDateTime: getDefaultTargetDateTime()
+    }));
+  }, []);
+
 
   const generateEmbedCode = useCallback((currentConfig: CountdownWidgetConfig): string => {
     const widgetId = `uclock-countdown-widget-${Date.now()}`;
-    const { 
+    const {
       targetDateTime, title, titleColor, numberColor, labelColor, backgroundColor, borderColor,
-      fontFamily, showDays, showHours, showMinutes, showSeconds, finishedText 
+      fontFamily, showDays, showHours, showMinutes, showSeconds, finishedText
     } = currentConfig;
 
+    // Fallback if targetDateTime is somehow still empty, though the preview useEffect should prevent this.
+    if (!targetDateTime) {
+        return `<div id="${widgetId}-container" style="background-color: ${backgroundColor}; color: ${titleColor}; padding: 20px; border-radius: 12px; text-align: center; font-family: '${fontFamily}', sans-serif; display: inline-block; min-width: 280px;"><p style='color:red;'>Error: Target date/time not set.</p></div>`;
+    }
+
     const containerStyle = `
-      background-color: ${backgroundColor}; 
-      color: ${numberColor}; 
-      padding: 20px; 
-      border-radius: 12px; 
-      text-align: center; 
-      font-family: '${fontFamily}', sans-serif; 
-      display: inline-block; 
-      min-width: 280px; 
+      background-color: ${backgroundColor};
+      color: ${numberColor};
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      font-family: '${fontFamily}', sans-serif;
+      display: inline-block;
+      min-width: 280px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       ${borderColor ? `border: 1px solid ${borderColor};` : ''}
     `.trim().replace(/\s\s+/g, ' ');
 
     const titleStyle = `
-      color: ${titleColor}; 
-      font-size: 1.5em; 
-      font-weight: bold; 
+      color: ${titleColor};
+      font-size: 1.5em;
+      font-weight: bold;
       margin-bottom: 15px;
     `.trim().replace(/\s\s+/g, ' ');
 
     const timeUnitContainerStyle = `
-      display: flex; 
-      justify-content: center; 
+      display: flex;
+      justify-content: center;
       gap: 10px;
     `.trim().replace(/\s\s+/g, ' ');
-    
+
     const timeUnitStyle = `
-      display: flex; 
-      flex-direction: column; 
+      display: flex;
+      flex-direction: column;
       align-items: center;
       padding: 5px;
       min-width: 50px;
     `.trim().replace(/\s\s+/g, ' ');
 
     const numberStyle = `
-      font-size: 2.2em; 
-      font-weight: bold; 
+      font-size: 2.2em;
+      font-weight: bold;
       line-height: 1.1;
       color: ${numberColor};
     `.trim().replace(/\s\s+/g, ' ');
 
     const labelStyle = `
-      font-size: 0.75em; 
-      text-transform: uppercase; 
+      font-size: 0.75em;
+      text-transform: uppercase;
       color: ${labelColor};
       margin-top: 3px;
     `.trim().replace(/\s\s+/g, ' ');
-    
+
     const finishedMessageStyle = `
       font-size: 1.8em;
       font-weight: bold;
@@ -172,10 +189,10 @@ export default function CountdownWidgetGeneratorWidget() {
       if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format ('" + targetDateStr + "'). Please use YYYY-MM-DDTHH:mm.</p>";
       return;
     }
-    
+
     const timerDiv = document.getElementById('${widgetId}-timer');
     const finishedDiv = document.getElementById('${widgetId}-finished');
-    
+
     const daysEl = document.getElementById('${widgetId}-days');
     const hoursEl = document.getElementById('${widgetId}-hours');
     const minutesEl = document.getElementById('${widgetId}-minutes');
@@ -230,15 +247,22 @@ export default function CountdownWidgetGeneratorWidget() {
     updateCountdown(); // Initial call to display immediately
   })();
 </script>
-    `.trim().replace(/\n\s*/g, ''); // Minify slightly for embed code
+    `.trim().replace(/\n\s*/g, '');
   }, []);
 
+
   useEffect(() => {
-    // console.log("[React Log] Generating embed code with targetDateTime:", config.targetDateTime); 
-    const code = generateEmbedCode(config);
-    setEmbedCode(code);
-    setPreviewHtml(code); 
+    if (config.targetDateTime && config.targetDateTime !== '') {
+      // console.log("[React Log] Generating embed code with targetDateTime:", config.targetDateTime);
+      const code = generateEmbedCode(config);
+      setEmbedCode(code);
+      setPreviewHtml(code);
+    } else {
+      setEmbedCode('');
+      setPreviewHtml(`<div style="font-family: sans-serif; text-align: center; padding: 20px; color: #777;">Initializing settings...</div>`);
+    }
   }, [config, generateEmbedCode]);
+
 
   const handleConfigChange = (field: keyof CountdownWidgetConfig, value: any) => {
     setConfig(prev => {
@@ -259,12 +283,12 @@ export default function CountdownWidgetGeneratorWidget() {
       return newConfig;
     });
   };
-  
+
   const handleColorChange = (field: keyof CountdownWidgetConfig, value: string) => {
     setConfig(prev => ({
       ...prev,
       [field]: value,
-      themeName: "Custom" // Indicate that colors are custom
+      themeName: "Custom"
     }));
   };
 
@@ -288,32 +312,33 @@ export default function CountdownWidgetGeneratorWidget() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="targetDateTime">Target Date & Time</Label>
-            <Input 
-              id="targetDateTime" 
-              type="datetime-local" 
-              value={config.targetDateTime} 
-              onChange={(e) => handleConfigChange('targetDateTime', e.target.value)} 
+            <Input
+              id="targetDateTime"
+              type="datetime-local"
+              value={config.targetDateTime} // Controlled component
+              onChange={(e) => handleConfigChange('targetDateTime', e.target.value)}
               className="mt-1"
               required
+              disabled={!config.targetDateTime} // Disable while initial value is being set
             />
           </div>
           <div>
             <Label htmlFor="title">Title (Optional)</Label>
-            <Input 
-              id="title" 
-              type="text" 
-              placeholder="e.g., New Year 2025" 
-              value={config.title} 
+            <Input
+              id="title"
+              type="text"
+              placeholder="e.g., New Year 2025"
+              value={config.title}
               onChange={(e) => handleConfigChange('title', e.target.value)}
               className="mt-1"
             />
           </div>
            <div>
             <Label htmlFor="finishedText">Text after countdown finishes</Label>
-            <Input 
-              id="finishedText" 
-              type="text" 
-              value={config.finishedText} 
+            <Input
+              id="finishedText"
+              type="text"
+              value={config.finishedText}
               onChange={(e) => handleConfigChange('finishedText', e.target.value)}
               className="mt-1"
             />
@@ -372,7 +397,7 @@ export default function CountdownWidgetGeneratorWidget() {
           </div>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center"><CheckSquare className="mr-2 h-5 w-5" />Display Units</CardTitle>
@@ -380,15 +405,15 @@ export default function CountdownWidgetGeneratorWidget() {
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            {id: 'showDays', label: 'Days'}, 
+            {id: 'showDays', label: 'Days'},
             {id: 'showHours', label: 'Hours'},
             {id: 'showMinutes', label: 'Minutes'},
             {id: 'showSeconds', label: 'Seconds'}
           ].map(unit => (
             <div key={unit.id} className="flex items-center space-x-2">
-              <Checkbox 
-                id={unit.id} 
-                checked={config[unit.id as keyof CountdownWidgetConfig] as boolean} 
+              <Checkbox
+                id={unit.id}
+                checked={config[unit.id as keyof CountdownWidgetConfig] as boolean}
                 onCheckedChange={(checked) => handleConfigChange(unit.id as keyof CountdownWidgetConfig, !!checked)}
               />
               <Label htmlFor={unit.id} className="cursor-pointer">{unit.label}</Label>
@@ -405,7 +430,7 @@ export default function CountdownWidgetGeneratorWidget() {
           <div className="p-4 border rounded-md bg-muted flex items-center justify-center min-h-[150px]">
             {previewHtml && (
               <iframe
-                key={JSON.stringify(config)} 
+                key={JSON.stringify(config)}
                 srcDoc={`
                   <html>
                     <head>
@@ -420,9 +445,9 @@ export default function CountdownWidgetGeneratorWidget() {
                   </html>
                 `}
                 title="Countdown Widget Preview"
-                sandbox="allow-scripts" 
+                sandbox="allow-scripts"
                 className="w-auto h-auto border-0"
-                style={{minWidth: '320px', minHeight: '120px'}} // Adjusted for better preview
+                style={{minWidth: '320px', minHeight: '120px'}}
                 scrolling="no"
               />
             )}
@@ -451,4 +476,3 @@ export default function CountdownWidgetGeneratorWidget() {
     </div>
   );
 }
-
