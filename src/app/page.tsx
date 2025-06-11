@@ -42,7 +42,7 @@ export default function DashboardPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="mb-8 text-center">
-        <h2 className="text-3xl font-headline font-semibold text-foreground mb-2">Dashboard</h2>
+        <h2 className="text-3xl font-headline font-semibold text-foreground mb-2">Home</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Welcome to Uclock Ai! Your central hub for smart time management.
         </p>
