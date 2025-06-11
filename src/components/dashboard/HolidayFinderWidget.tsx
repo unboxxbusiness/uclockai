@@ -51,7 +51,7 @@ export default function HolidayFinderWidget() {
       });
       setHolidaysResult(result);
     } catch (err: any) {
-      console.error("Holiday lookup error:", err);
+      console.error("Holiday lookup error (client-side):", err);
       setError(err.message || "Failed to fetch holidays. Please check the inputs or try again later.");
       setHolidaysResult(null);
     }
@@ -154,7 +154,7 @@ export default function HolidayFinderWidget() {
           {holidaysResult?.dataSource && (
             <p className="text-xs text-muted-foreground mt-3 text-center px-1">
               Holiday data provided by {holidaysResult.dataSource}. 
-              The public API endpoint may have limitations. It is recommended to verify critical dates from official sources, especially if the API indicates limited data for a specific region or year.
+              Public data services may have limitations. It is recommended to verify critical dates from official sources, especially if the data service indicates limited data for a specific region or year.
             </p>
           )}
         </>

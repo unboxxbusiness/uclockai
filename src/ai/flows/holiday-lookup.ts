@@ -41,11 +41,11 @@ const holidayLookupFlow = ai.defineFlow(
       const apiHolidays = await getHolidaysTool({ countryCode: upperCaseCountryCode, year: targetYear });
 
       if (!Array.isArray(apiHolidays)) {
-        console.error("Nager.Date tool did not return an array:", apiHolidays);
+        console.error("Holiday tool did not return an array:", apiHolidays);
         return {
             holidays: [],
-            dataSource: 'Nager.Date API (Public/No-Key)',
-            message: advisoryMessage || 'Received unexpected data from the holiday API.',
+            dataSource: 'Public Holiday Data Service',
+            message: advisoryMessage || 'Received unexpected data from the holiday data service.',
         };
       }
       
@@ -55,27 +55,31 @@ const holidayLookupFlow = ai.defineFlow(
       }));
 
       let finalMessage = advisoryMessage;
+      const newDataSource = 'Public Holiday Data Service';
 
       if (holidays.length === 0) {
         if (upperCaseCountryCode === 'IN') {
-          finalMessage = `The Nager.Date API currently has no public holiday data listed for India (IN) for the year ${targetYear}. ${advisoryMessage}`;
-        } else if (!finalMessage) { // No holidays for other countries and no pre-existing advisory message
-          finalMessage = `No public holidays were found for ${upperCaseCountryCode} for ${targetYear}. This could be due to no holidays for this selection, an incorrect country code, or the API having no data for this query.`;
+          finalMessage = `No public holiday data is currently listed for India (IN) for the year ${targetYear}. ${advisoryMessage}`;
+        } else if (!finalMessage) { 
+          finalMessage = `No public holidays were found for ${upperCaseCountryCode} for ${targetYear}. This could be due to no holidays for this selection, an incorrect country code, or the data service having no data for this query.`;
         }
-        // If there was already an advisoryMessage (e.g. for IN but holidays were found, which is not this case), it remains.
       }
 
 
       return {
         holidays,
-        dataSource: 'Nager.Date API (Public/No-Key)',
+        dataSource: newDataSource,
         message: finalMessage || undefined, 
       };
     } catch (error: any) {
-      console.error(`Error in holidayLookupFlow while fetching holidays for ${upperCaseCountryCode}, ${targetYear}:`, error);
-      const errorMessagePrefix = advisoryMessage ? `${advisoryMessage} Additionally, an error occurred: ` : '';
-      throw new Error(`${errorMessagePrefix}Failed to retrieve holidays: ${error.message}`);
+      // Log the original error for server-side debugging
+      console.error(`Error in holidayLookupFlow fetching holidays for ${upperCaseCountryCode}, ${targetYear}. Original error: ${error.message}`, error.stack);
+      
+      // Provide a generic error message to the client
+      const genericErrorMessage = "An error occurred while fetching holiday data. Please check your input or try again later.";
+      const finalUserErrorMessage = advisoryMessage ? `${advisoryMessage} Additionally, ${genericErrorMessage.toLowerCase()}` : genericErrorMessage;
+      
+      throw new Error(finalUserErrorMessage);
     }
   }
 );
-
