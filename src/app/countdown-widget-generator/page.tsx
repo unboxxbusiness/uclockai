@@ -18,7 +18,7 @@ export default function CountdownWidgetGeneratorPage() {
         <Card className="shadow-xl rounded-xl flex flex-col overflow-hidden bg-card">
           <CardHeader className="flex flex-row items-center space-x-3 border-b p-4">
             <Hourglass className="h-6 w-6 text-primary" />
-            <CardTitle className="font-headline text-lg text-foreground">Countdown Timer Widget Generator</CardTitle>
+            <CardTitle className="font-headline text-lg text-foreground">Countdown Widget Generator</CardTitle>
           </CardHeader>
           <CardContent className="p-4 md:p-6 flex-grow">
             <CountdownWidgetGeneratorWidget />

@@ -34,7 +34,7 @@ const toolCategories = [
     Icon: Wrench,
     tools: [
       { id: 'widgetGenerator', title: 'Time Widget Generator', Icon: Settings2, href: '/widget-generator', description: 'Create embeddable time widgets for your website.' },
-      { id: 'countdownWidgetGenerator', title: 'Countdown Widget Generator', Icon: Hourglass, href: '/countdown-widget-generator', description: 'Generate countdown timer widgets for events.' },
+      { id: 'countdownWidgetGenerator', title: 'Countdown Widget Generator', Icon: Hourglass, href: '/countdown-widget-generator', description: 'Generate countdown widgets for events.' },
     ]
   }
 ];
