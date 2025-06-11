@@ -1,7 +1,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, Hourglass, CalendarDays } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import SleekClockDisplay from '@/components/interface/SleekClockDisplay';
 
@@ -34,7 +34,6 @@ const toolCategories = [
     Icon: Wrench,
     tools: [
       { id: 'widgetGenerator', title: 'Time Widget Generator', Icon: Settings2, href: '/widget-generator', description: 'Create embeddable time widgets for your website.' },
-      { id: 'countdownWidgetGenerator', title: 'Countdown Widget Generator', Icon: Hourglass, href: '/countdown-widget-generator', description: 'Generate countdown widgets for events.' },
     ]
   }
 ];
