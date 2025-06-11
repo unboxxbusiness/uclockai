@@ -15,7 +15,7 @@ import {
   SidebarTrigger
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home, Brain, Globe, BellRing, Settings2, CalendarDays } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, Home as HomeIcon, Brain, Globe, BellRing, Settings2, CalendarDays } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const navItems = [
-    { href: '/', label: 'Dashboard', Icon: Home },
+    { href: '/', label: 'Home', Icon: HomeIcon },
     { href: '/world-clock', label: 'World Clock', Icon: Clock },
     { href: '/timer', label: 'Timer', Icon: TimerIcon },
     { href: '/stopwatch', label: 'Stopwatch', Icon: Watch },
