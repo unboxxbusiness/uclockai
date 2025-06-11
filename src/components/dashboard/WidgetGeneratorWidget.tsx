@@ -14,12 +14,13 @@ import { Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface WidgetConfig {
+  clockType: 'digital' | 'sleek';
   timezone: string;
   hourFormat: '12h' | '24h';
   showSeconds: boolean;
   textColor: string;
   backgroundColor: string;
-  // clockType: 'digital' | 'analog'; // Removed
+  fontFamily: 'Inter' | 'Roboto Mono' | 'Segment7';
 }
 
 const colorThemes = [
@@ -32,6 +33,11 @@ const colorThemes = [
   { name: 'Mint & White', textColor: '#333333', backgroundColor: '#A7F3D0' },
 ];
 
+const fontFamilies = [
+  { value: 'Inter', label: 'Inter (Sans-Serif)' },
+  { value: 'Roboto Mono', label: 'Roboto Mono (Monospace)' },
+  { value: 'Segment7', label: 'Segment7 (Digital)' },
+];
 
 export default function WidgetGeneratorWidget() {
   const { toast } = useToast();
@@ -41,54 +47,137 @@ export default function WidgetGeneratorWidget() {
   const [selectedThemeName, setSelectedThemeName] = useState<string>(defaultTheme.name);
 
   const [config, setConfig] = useState<WidgetConfig>({
+    clockType: 'digital',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     hourFormat: '12h',
     showSeconds: true,
     textColor: defaultTheme.textColor,
     backgroundColor: defaultTheme.backgroundColor,
-    // clockType: 'digital', // Removed
+    fontFamily: 'Inter',
   });
   const [embedCode, setEmbedCode] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
 
+  const getFontFamilyCss = (fontFamily: WidgetConfig['fontFamily']): string => {
+    switch (fontFamily) {
+      case 'Inter':
+        return "'Inter', Arial, sans-serif";
+      case 'Roboto Mono':
+        return "'Roboto Mono', monospace";
+      case 'Segment7':
+        return "'Segment7', 'Roboto Mono', monospace"; // Segment7 is primary for digital time
+      default:
+        return "Arial, sans-serif";
+    }
+  };
+
   const generateEmbedCode = useCallback((currentConfig: WidgetConfig): string => {
     const widgetId = `uclock-ai-widget-${Date.now()}`;
     const jsHourFormat = currentConfig.hourFormat === '12h' ? 'true' : 'false';
+    const selectedFontFamilyCss = getFontFamilyCss(currentConfig.fontFamily);
 
-    // Digital clock only
-    const clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: 'Segment7', 'Roboto Mono', monospace;"></span>`;
-    const clockScript = `
-      const timeElement = document.getElementById('${widgetId}-time');
-      if (!timeElement) {
-        console.error("Uclock Ai Widget: Time element not found.");
-        return;
-      }
-      const timezone = "${currentConfig.timezone}";
-      const use12HourFormat = ${jsHourFormat};
-      const showSeconds = ${currentConfig.showSeconds};
+    let clockHtml = '';
+    let clockScript = '';
+    let mainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: ${selectedFontFamilyCss}; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
 
-      function updateDigitalTime() {
-        const now = new Date();
-        const options = {
-          timeZone: timezone,
-          hour12: use12HourFormat,
-          hour: '2-digit',
-          minute: '2-digit',
-          ...(showSeconds && { second: '2-digit' })
-        };
-        try {
-          timeElement.textContent = new Intl.DateTimeFormat('en-US', options).format(now);
-        } catch (e) {
-          timeElement.textContent = 'Error';
-          console.error("Uclock Ai Widget: Error formatting time - ", e);
+    if (currentConfig.clockType === 'digital') {
+      // For digital clock, Segment7 should be prioritized if selected for the time element itself.
+      const digitalTimeFontFamily = currentConfig.fontFamily === 'Segment7' ? getFontFamilyCss('Segment7') : selectedFontFamilyCss;
+      mainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: ${selectedFontFamilyCss}; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
+      clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: ${digitalTimeFontFamily};"></span>`;
+      clockScript = `
+        const timeElement = document.getElementById('${widgetId}-time');
+        if (!timeElement) { console.error("Uclock Ai Widget: Time element not found."); return; }
+        const timezone = "${currentConfig.timezone}";
+        const use12HourFormat = ${jsHourFormat};
+        const showSeconds = ${currentConfig.showSeconds};
+
+        function updateDigitalTime() {
+          const now = new Date();
+          const options = {
+            timeZone: timezone,
+            hour12: use12HourFormat,
+            hour: '2-digit',
+            minute: '2-digit',
+            ...(showSeconds && { second: '2-digit' })
+          };
+          try {
+            timeElement.textContent = new Intl.DateTimeFormat('en-US', options).format(now);
+          } catch (e) {
+            timeElement.textContent = 'Error';
+            console.error("Uclock Ai Widget: Error formatting time - ", e);
+          }
         }
-      }
-      updateDigitalTime(); // Initial call
-      return updateDigitalTime;
-    `;
+        updateDigitalTime();
+        return updateDigitalTime;
+      `;
+    } else if (currentConfig.clockType === 'sleek') {
+      mainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 20px; border-radius: 10px; text-align: center; font-family: ${selectedFontFamilyCss}; display: inline-block; min-width: 220px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);`;
+      clockHtml = `
+        <div id="${widgetId}-time-container" style="margin-bottom: 10px;">
+          <span id="${widgetId}-time" style="font-size: 2.8em; font-weight: bold; line-height: 1.1; display: inline;"></span>
+          <span id="${widgetId}-ampm" style="font-size: 1.2em; opacity: 0.8; margin-left: 5px; display: ${currentConfig.hourFormat === '12h' ? 'inline' : 'none'};"></span>
+        </div>
+        <div id="${widgetId}-date" style="font-size: 0.95em; opacity: 0.9;"></div>
+      `;
+      clockScript = `
+        const timeElement = document.getElementById('${widgetId}-time');
+        const ampmElement = document.getElementById('${widgetId}-ampm');
+        const dateElement = document.getElementById('${widgetId}-date');
+        if (!timeElement || !ampmElement || !dateElement) { console.error("Uclock Ai Widget (Sleek): Core elements not found."); return; }
+
+        const timezone = "${currentConfig.timezone}";
+        const use12HourFormat = ${jsHourFormat};
+        const showSeconds = ${currentConfig.showSeconds};
+        
+        function updateSleekTime() {
+          const now = new Date();
+          try {
+            const timeOptions = {
+              timeZone: timezone,
+              hour12: use12HourFormat,
+              hour: '2-digit',
+              minute: '2-digit',
+              ...(showSeconds && { second: '2-digit' })
+            };
+            let formattedTime = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
+            
+            if (use12HourFormat) {
+              const match = formattedTime.match(/(\\S+)\\s?(AM|PM)/i);
+              if (match) {
+                timeElement.textContent = match[1];
+                ampmElement.textContent = match[2];
+                ampmElement.style.display = 'inline';
+              } else {
+                timeElement.textContent = formattedTime; // Fallback if regex fails
+                ampmElement.style.display = 'none';
+              }
+            } else {
+              timeElement.textContent = formattedTime;
+              ampmElement.style.display = 'none';
+            }
+
+            const dateOptions = {
+              timeZone: timezone,
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            };
+            dateElement.textContent = new Intl.DateTimeFormat('en-US', dateOptions).format(now);
+          } catch (e) {
+            if (timeElement) timeElement.textContent = 'Error';
+            if (dateElement) dateElement.textContent = 'Date Error';
+            console.error("Uclock Ai Widget (Sleek): Error formatting time/date - ", e);
+          }
+        }
+        updateSleekTime();
+        return updateSleekTime;
+      `;
+    }
     
     return `
-<div id="${widgetId}-container" style="background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: Arial, sans-serif; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+<div id="${widgetId}-container" style="${mainContainerStyle}">
   ${clockHtml}
 </div>
 <script>
@@ -104,7 +193,7 @@ export default function WidgetGeneratorWidget() {
     })();
 
     if (typeof updateTimeFunction !== 'function') {
-       console.error("Uclock Ai Widget: Update function not properly defined.");
+       console.error("Uclock Ai Widget: Update function not properly defined for ${currentConfig.clockType} type.");
        return;
     }
 
@@ -127,8 +216,19 @@ export default function WidgetGeneratorWidget() {
     setPreviewHtml(`<div key="${previewKey}">${code}</div>`);
   }, [config, generateEmbedCode]);
 
-  const handleConfigChange = (field: keyof Omit<WidgetConfig, 'clockType'>, value: any) => {
-    setConfig(prev => ({ ...prev, [field]: value }));
+  const handleConfigChange = (field: keyof WidgetConfig, value: any) => {
+    setConfig(prev => {
+      const newConfig = { ...prev, [field]: value };
+      // If clock type changes to digital, and font is Inter, switch to Segment7 as a sensible default for digital
+      if (field === 'clockType' && value === 'digital' && newConfig.fontFamily === 'Inter') {
+        newConfig.fontFamily = 'Segment7';
+      }
+      // If clock type changes to sleek, and font is Segment7, switch to Inter
+      if (field === 'clockType' && value === 'sleek' && newConfig.fontFamily === 'Segment7') {
+        newConfig.fontFamily = 'Inter';
+      }
+      return newConfig;
+    });
     if (field === 'textColor' || field === 'backgroundColor') {
       setSelectedThemeName("Custom"); 
     }
@@ -165,7 +265,35 @@ export default function WidgetGeneratorWidget() {
           <CardDescription>Customize the appearance and behavior of your embeddable time widget.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Clock Type selection removed */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="clockType">Clock Type</Label>
+              <Select 
+                value={config.clockType} 
+                onValueChange={(value) => handleConfigChange('clockType', value as 'digital' | 'sleek')}
+              >
+                <SelectTrigger id="clockType"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="digital">Digital Clock</SelectItem>
+                  <SelectItem value="sleek">Sleek Clock</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="fontFamily">Font Family</Label>
+              <Select value={config.fontFamily} onValueChange={(value) => handleConfigChange('fontFamily', value as WidgetConfig['fontFamily'])}>
+                <SelectTrigger id="fontFamily"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {fontFamilies.map(font => (
+                    <SelectItem key={font.value} value={font.value} disabled={config.clockType === 'sleek' && font.value === 'Segment7'}>
+                      {font.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="timezone">Timezone</Label>
@@ -254,7 +382,7 @@ export default function WidgetGeneratorWidget() {
                     <head>
                       <link rel="preconnect" href="https://fonts.googleapis.com">
                       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                      <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&family=Segment7&display=swap" rel="stylesheet">
+                      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
                       <style>
                         @font-face {
                           font-family: 'Segment7';
@@ -262,7 +390,7 @@ export default function WidgetGeneratorWidget() {
                           font-weight: normal;
                           font-style: normal;
                         }
-                        body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100px; }
+                        body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100px; background-color: transparent; }
                       </style>
                     </head>
                     <body>
@@ -273,7 +401,7 @@ export default function WidgetGeneratorWidget() {
                 title="Widget Preview"
                 sandbox="allow-scripts" 
                 className="w-auto h-auto border-0"
-                style={{minWidth: '180px', minHeight: '80px'}}
+                style={{minWidth: '180px', minHeight: '80px'}} // Adjusted minHeight
                 scrolling="no"
               />
             )}
@@ -290,7 +418,7 @@ export default function WidgetGeneratorWidget() {
           <Textarea
             value={embedCode}
             readOnly
-            rows={15}
+            rows={config.clockType === 'sleek' ? 20 : 15} // More rows for sleek due to more script lines
             className="text-xs font-mono bg-muted/50"
             aria-label="Embeddable widget code"
           />
@@ -302,3 +430,4 @@ export default function WidgetGeneratorWidget() {
     </div>
   );
 }
+
