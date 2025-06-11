@@ -45,13 +45,17 @@ export default function PomodoroWidget() {
   }, [mode, isRunning]);
 
   useEffect(() => {
+ if (typeof window !== 'undefined') {
     // Update browser title with time left
     if (isRunning) {
       document.title = `${formatTime(timeLeft)} - ${MODES[mode].label} | Uclock Ai`;
     } else {
+ if (document.title !== `Uclock Ai - Smart Time Management`) {
       document.title = `Uclock Ai - Smart Time Management`;
+ }
     }
     return () => { document.title = `Uclock Ai - Smart Time Management`; }; // Cleanup on unmount
+ }
   }, [timeLeft, isRunning, mode]);
 
 
@@ -84,7 +88,7 @@ export default function PomodoroWidget() {
   }, [mode, pomodorosCompleted, toast]);
   
   useInterval(() => {
-    if (isRunning && timeLeft > 0) {
+ if (isRunning && timeLeft > 0) {
       setTimeLeft(prevTime => prevTime - 1);
     } else if (isRunning && timeLeft === 0) {
       handleTimerEnd();
@@ -193,7 +197,7 @@ export default function PomodoroWidget() {
       <p className="text-sm text-muted-foreground mt-4">
         Pomodoros completed: {pomodorosCompleted}
       </p>
-      {Notification.permission !== "granted" && Notification.permission !== "denied" && (
+ {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied" && (
         <Button variant="link" onClick={requestNotificationPermission} className="text-xs mt-2">
             Enable browser notifications
         </Button>
