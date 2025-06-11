@@ -165,7 +165,7 @@ export default function SleekClockDisplay() {
             </div>
           )}
            <p className="text-xs text-muted-foreground/70 text-center mt-4">
-            {weather && !weatherError ? "Live weather for Delhi, India (via Open-Meteo API)" : "(Weather data service might be unavailable)"}
+            {weather && !weatherError ? "Live weather for Delhi, India" : "(Weather data service might be unavailable)"}
           </p>
         </div>
       </CardContent>
