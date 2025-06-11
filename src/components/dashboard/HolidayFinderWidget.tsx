@@ -118,13 +118,13 @@ export default function HolidayFinderWidget() {
         </div>
       )}
 
-      {holidaysResult && !isLoading && !error && (
+      {holidaysResult && !isLoading && !error && searchedCriteria && (
         <>
           {holidaysResult.holidays && holidaysResult.holidays.length > 0 ? (
             <ScrollArea className="h-60 border rounded-md p-1 bg-muted/20">
               <h3 className="text-sm font-medium my-2 text-muted-foreground px-3">
-                Public Holidays in {searchedCriteria?.countryCode?.toUpperCase()}
-                {searchedCriteria?.year ? ` for ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}:
+                Public Holidays in {searchedCriteria.countryCode}
+                {searchedCriteria.year ? ` for ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}:
               </h3>
               <ul className="space-y-1 p-2">
                 {holidaysResult.holidays.map((holiday, index) => (
@@ -139,8 +139,8 @@ export default function HolidayFinderWidget() {
             </ScrollArea>
           ) : (
              <p className="text-center text-muted-foreground p-4">
-               No public holidays found for {searchedCriteria?.countryCode?.toUpperCase()}
-               {searchedCriteria?.year ? ` in ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}.
+               No public holidays found for {searchedCriteria.countryCode}
+               {searchedCriteria.year ? ` in ${searchedCriteria.year}` : ` for ${new Date().getFullYear()}`}.
              </p>
           )}
 
@@ -150,10 +150,9 @@ export default function HolidayFinderWidget() {
               <p>{holidaysResult.message}</p>
             </div>
           )}
-
-          {/* Removed the data source attribution paragraph that was here */}
         </>
       )}
     </div>
   );
 }
+
