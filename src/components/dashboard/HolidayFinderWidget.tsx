@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { holidayLookup, type HolidayLookupOutput } from '@/ai/flows/holiday-lookup';
 import { HolidayLookupInputSchema } from '@/ai/schemas/holiday-schemas';
-import { Loader2, CalendarDays, AlertCircle, Info } from 'lucide-react';
+import { Loader2, CalendarDays, AlertCircle, Info, ListChecks } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, parseISO } from 'date-fns';
 import { useForm } from "react-hook-form";
@@ -21,14 +21,24 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Separator } from '@/components/ui/separator';
 
 type HolidayFormValues = z.infer<typeof HolidayLookupInputSchema>;
+
+interface AvailableCountry {
+  countryCode: string;
+  name: string;
+}
 
 export default function HolidayFinderWidget() {
   const [holidaysResult, setHolidaysResult] = useState<HolidayLookupOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchedCriteria, setSearchedCriteria] = useState<{ countryCode: string; year?: string } | null>(null);
+
+  const [availableCountries, setAvailableCountries] = useState<AvailableCountry[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+  const [countriesError, setCountriesError] = useState<string | null>(null);
 
   const form = useForm<HolidayFormValues>({
     resolver: zodResolver(HolidayLookupInputSchema),
@@ -37,6 +47,28 @@ export default function HolidayFinderWidget() {
       year: '',
     },
   });
+
+  useEffect(() => {
+    const fetchAvailableCountries = async () => {
+      setIsLoadingCountries(true);
+      setCountriesError(null);
+      try {
+        const response = await fetch('https://date.nager.at/api/v3/AvailableCountries');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch available countries: ${response.status}`);
+        }
+        const data: AvailableCountry[] = await response.json();
+        setAvailableCountries(data.sort((a, b) => a.name.localeCompare(b.name)));
+      } catch (err: any) {
+        console.error("Error fetching available countries:", err);
+        setCountriesError(err.message || "Could not load list of supported countries.");
+        setAvailableCountries([]);
+      } finally {
+        setIsLoadingCountries(false);
+      }
+    };
+    fetchAvailableCountries();
+  }, []);
 
   const onSubmit = async (values: HolidayFormValues) => {
     setIsLoading(true);
@@ -59,7 +91,7 @@ export default function HolidayFinderWidget() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -152,7 +184,42 @@ export default function HolidayFinderWidget() {
           )}
         </>
       )}
+      
+      <Separator className="my-6" />
+
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-foreground flex items-center">
+          <ListChecks className="mr-2 h-5 w-5 text-primary" />
+          Supported Country Codes
+        </h3>
+        {isLoadingCountries && (
+          <div className="flex items-center text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading supported countries...
+          </div>
+        )}
+        {countriesError && (
+          <div className="text-destructive p-3 bg-destructive/10 rounded-md flex items-start text-sm">
+            <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" />
+            <p>{countriesError}</p>
+          </div>
+        )}
+        {!isLoadingCountries && !countriesError && availableCountries.length > 0 && (
+          <ScrollArea className="h-48 border rounded-md p-1 bg-muted/20">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1 p-2">
+              {availableCountries.map(country => (
+                <li key={country.countryCode} className="text-sm p-1 hover:bg-muted rounded">
+                  <span className="font-medium text-foreground">{country.name}</span>
+                  <span className="text-muted-foreground"> ({country.countryCode})</span>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+        )}
+         {!isLoadingCountries && !countriesError && availableCountries.length === 0 && (
+            <p className="text-sm text-muted-foreground">Could not load the list of supported countries.</p>
+        )}
+      </div>
     </div>
   );
 }
-
