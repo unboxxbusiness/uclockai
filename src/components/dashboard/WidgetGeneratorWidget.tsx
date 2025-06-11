@@ -74,6 +74,8 @@ export default function WidgetGeneratorWidget() {
   });
   const [embedCode, setEmbedCode] = useState('');
   const [previewLoading, setPreviewLoading] = useState(true);
+  const [initializationDone, setInitializationDone] = useState(false);
+
 
   useEffect(() => {
     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -81,12 +83,19 @@ export default function WidgetGeneratorWidget() {
       ...prev,
       timezone: userTimezone,
     }));
-    setPreviewLoading(false); 
+    setInitializationDone(true);
   }, []);
+
+  useEffect(() => {
+    // Only set previewLoading to false if initialization is done and allTimezones are loaded.
+    if (initializationDone && allTimezones.length > 0 && config.timezone) {
+      setPreviewLoading(false);
+    }
+  }, [initializationDone, allTimezones, config.timezone]);
 
 
   const generateEmbedCode = useCallback((currentConfig: WidgetConfig): string => {
-    if (previewLoading || !currentConfig.timezone) { 
+    if (!currentConfig.timezone || !initializationDone) { 
       return "<p>Initializing settings...</p>";
     }
     const widgetId = `uclock-ai-widget-${Date.now()}`;
@@ -103,7 +112,7 @@ export default function WidgetGeneratorWidget() {
       finalClockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: ${digitalTimeDisplayFont};"></span>`;
       finalClockScript = `
         const timeElement = document.getElementById('${widgetId}-time');
-        if (!timeElement) { console.error("Uclock Ai Widget: Time element not found."); return; }
+        if (!timeElement) { console.error("Uclock Ai Widget: Time element not found for " + "${widgetId}" + "."); return function() {}; }
         const timezone = "${currentConfig.timezone}";
         const use12HourFormat = ${jsHourFormat};
         const showSeconds = ${currentConfig.showSeconds};
@@ -121,7 +130,7 @@ export default function WidgetGeneratorWidget() {
             timeElement.textContent = new Intl.DateTimeFormat('en-US', options).format(now);
           } catch (e) {
             timeElement.textContent = 'Error';
-            console.error("Uclock Ai Widget: Error formatting time - ", e);
+            console.error("Uclock Ai Widget (" + "${widgetId}" + "): Error formatting time - ", e);
           }
         }
         updateDigitalTime();
@@ -140,7 +149,7 @@ export default function WidgetGeneratorWidget() {
         const timeElement = document.getElementById('${widgetId}-time');
         const ampmElement = document.getElementById('${widgetId}-ampm');
         const dateElement = document.getElementById('${widgetId}-date');
-        if (!timeElement || !ampmElement || !dateElement) { console.error("Uclock Ai Widget (Sleek): Core elements not found."); return; }
+        if (!timeElement || !ampmElement || !dateElement) { console.error("Uclock Ai Widget (Sleek): Core elements not found for " + "${widgetId}" + "."); return function() {}; }
 
         const timezone = "${currentConfig.timezone}";
         const use12HourFormat = ${jsHourFormat};
@@ -159,14 +168,14 @@ export default function WidgetGeneratorWidget() {
             let formattedTime = new Intl.DateTimeFormat('en-US', timeOptions).format(now);
             
             if (use12HourFormat) {
-              const match = formattedTime.match(/(\\S+)\\s?(AM|PM)/i); // Script gets \\S and \\s
+              const match = formattedTime.match(/(\\S+)\\s?(AM|PM)/i); 
               if (match && match[1] && match[2]) {
                 timeElement.textContent = match[1];
                 ampmElement.textContent = match[2];
                 ampmElement.style.display = 'inline';
               } else {
-                timeElement.textContent = formattedTime.replace(/\\s?(AM|PM)$/i, '').trim(); // Script gets \\s
-                const amPmMatch = formattedTime.match(/(AM|PM)$/i);
+                timeElement.textContent = formattedTime.replace(/\\s?(AM|PM)$/i, '').trim(); 
+                const amPmMatch = formattedTime.match(/(AM|PM)$/i); 
                 if (amPmMatch && amPmMatch[1]) {
                    ampmElement.textContent = amPmMatch[1];
                    ampmElement.style.display = 'inline';
@@ -190,65 +199,50 @@ export default function WidgetGeneratorWidget() {
           } catch (e) {
             if (timeElement) timeElement.textContent = 'Error';
             if (dateElement) dateElement.textContent = 'Date Error';
-            console.error("Uclock Ai Widget (Sleek): Error formatting time/date - ", e);
+            console.error("Uclock Ai Widget (Sleek " + "${widgetId}" + "): Error formatting time/date - ", e);
           }
         }
         updateSleekTime();
         return updateSleekTime;
       `;
     } else {
-      // Fallback for unknown clock type
       finalMainContainerStyle = `color: red; font-family: sans-serif; padding: 10px; border: 1px solid red;`;
       finalClockHtml = `<p>Error: Unknown clock type configured ('${currentConfig.clockType}').</p>`;
-      finalClockScript = `console.error("Uclock Ai Widget: Unknown clock type - ${currentConfig.clockType}");`;
+      finalClockScript = `console.error("Uclock Ai Widget: Unknown clock type - " + "${currentConfig.clockType}"); return function() {};`;
     }
     
-    return \`
-<div id="\${widgetId}-container" style="\${finalMainContainerStyle}">
-  \${finalClockHtml}
-</div>
-<script>
-  (function() {
-    const widgetContainer = document.getElementById('\${widgetId}-container');
-    if (!widgetContainer) {
-      console.error("Uclock Ai Widget: Container element '\${widgetId}-container' not found.");
-      return;
-    }
+    let result = "";
+    result += `<div id="${widgetId}-container" style="${finalMainContainerStyle}">`;
+    result += finalClockHtml;
+    result += `</div>`;
+    result += `<script>`;
+    result += `(function() {`;
+    result += `const widgetContainer = document.getElementById('${widgetId}-container');`;
+    result += `if (!widgetContainer) { console.error("Uclock Ai Widget: Container element '" + "${widgetId}" + "-container' not found."); return; }`;
+    result += `const updateTimeFunction = (function() { ${finalClockScript} })();`;
+    result += `if (typeof updateTimeFunction !== 'function') {`;
+    result += `console.error("Uclock Ai Widget: Update function not properly defined for " + "${currentConfig.clockType}" + " type for widget " + "${widgetId}" + ".");`;
+    result += `const errorDisplay = document.createElement('p'); errorDisplay.style.color = 'red'; errorDisplay.textContent = 'Widget Error: Update function failed.';`;
+    result += `while (widgetContainer.firstChild) { widgetContainer.removeChild(widgetContainer.firstChild); } widgetContainer.appendChild(errorDisplay); return;`;
+    result += `}`;
+    result += `if (!window.uclockAiWidgetIntervals) { window.uclockAiWidgetIntervals = {}; }`;
+    result += `if (window.uclockAiWidgetIntervals['${widgetId}']) { clearInterval(window.uclockAiWidgetIntervals['${widgetId}']); }`;
+    result += `window.uclockAiWidgetIntervals['${widgetId}'] = setInterval(updateTimeFunction, 1000);`;
+    result += `})();`;
+    result += `<` + `/script>`;
     
-    const updateTimeFunction = (function() {
-      \${finalClockScript}
-    })();
-
-    if (typeof updateTimeFunction !== 'function') {
-       console.error("Uclock Ai Widget: Update function not properly defined for \${currentConfig.clockType} type.");
-       const errorDisplay = document.createElement('p');
-       errorDisplay.style.color = 'red';
-       errorDisplay.textContent = 'Widget Error: Update function failed.';
-       while (widgetContainer.firstChild) { widgetContainer.removeChild(widgetContainer.firstChild); }
-       widgetContainer.appendChild(errorDisplay);
-       return;
-    }
-
-    if (!window.uclockAiWidgetIntervals) {
-      window.uclockAiWidgetIntervals = {};
-    }
-    if (window.uclockAiWidgetIntervals['\${widgetId}']) {
-      clearInterval(window.uclockAiWidgetIntervals['\${widgetId}']);
-    }
-    window.uclockAiWidgetIntervals['\${widgetId}'] = setInterval(updateTimeFunction, 1000);
-  })();
-<` + `/script> 
-    \`.trim();
-  }, [config, previewLoading]);
+    return result.trim();
+  }, [initializationDone]); 
 
   useEffect(() => {
-    if (previewLoading || !config.timezone) { 
+    if (!initializationDone || !config.timezone) { 
       setEmbedCode("<p>Initializing settings...</p>");
       return;
     }
     const code = generateEmbedCode(config);
     setEmbedCode(code);
-  }, [config, generateEmbedCode, previewLoading]);
+  }, [config, generateEmbedCode, initializationDone]);
+
 
   const handleConfigChange = (field: keyof WidgetConfig, value: any) => {
     setConfig(prev => {
@@ -291,8 +285,8 @@ export default function WidgetGeneratorWidget() {
   };
 
   const iframeSrcDoc = useMemo(() => {
-    if (previewLoading) {
-      return \`<html><body><p>Initializing settings...</p></body></html>\`;
+    if (previewLoading || !embedCode.startsWith('<div')) {
+      return \`<html><body style="display:flex; align-items:center; justify-content:center; height:100%;"><div style="display:flex; flex-direction:column; align-items:center; justify-content:center; font-family: Inter, sans-serif; color: #777;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-circle animate-spin" style="margin-bottom: 8px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading Preview...</div></body></html>\`;
     }
     return \`
       <html>
@@ -364,15 +358,16 @@ export default function WidgetGeneratorWidget() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="timezone">Timezone</Label>
-              {previewLoading ? (
-                 <div className="flex items-center justify-center h-10 border rounded-md bg-muted">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              {(!initializationDone || !allTimezones.length || !config.timezone) ? (
+                 <div className="flex items-center justify-start h-10 border rounded-md bg-muted px-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                    <span className="text-sm text-muted-foreground">Loading timezones...</span>
                  </div>
               ) : (
                 <Select 
                     value={config.timezone} 
                     onValueChange={(value) => handleConfigChange('timezone', value)}
-                    disabled={!allTimezones.length}
+                    disabled={previewLoading}
                 >
                     <SelectTrigger id="timezone">
                     <SelectValue placeholder="Select timezone" />
@@ -453,9 +448,10 @@ export default function WidgetGeneratorWidget() {
         </CardHeader>
         <CardContent>
           <div className="p-4 border rounded-md bg-muted flex items-center justify-center min-h-[150px]">
-            {previewLoading ? (
-                 <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            {previewLoading || !embedCode.startsWith('<div') ? (
+                 <div className="flex flex-col items-center justify-center text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin mb-2" />
+                    <span className="text-sm">Loading Preview...</span>
                  </div>
             ) : (
               <iframe
@@ -481,7 +477,7 @@ export default function WidgetGeneratorWidget() {
           <Textarea
             value={embedCode}
             readOnly
-            rows={config.clockType === 'sleek' ? 20 : 15}
+            rows={config.clockType === 'sleek' ? 22 : 17} // Adjusted rows for new script length
             className="text-xs font-mono bg-muted/50"
             aria-label="Embeddable widget code"
           />
@@ -493,4 +489,6 @@ export default function WidgetGeneratorWidget() {
     </div>
   );
 }
+    
 
+      
