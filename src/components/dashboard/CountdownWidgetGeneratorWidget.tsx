@@ -94,7 +94,6 @@ export default function CountdownWidgetGeneratorWidget() {
       fontFamily, showDays, showHours, showMinutes, showSeconds, finishedText
     } = currentConfig;
 
-    // Fallback if targetDateTime is somehow still empty, though the preview useEffect should prevent this.
     if (!targetDateTime) {
         return `<div id="${widgetId}-container" style="background-color: ${backgroundColor}; color: ${titleColor}; padding: 20px; border-radius: 12px; text-align: center; font-family: '${fontFamily}', sans-serif; display: inline-block; min-width: 280px;"><p style='color:red;'>Error: Target date/time not set.</p></div>`;
     }
@@ -167,26 +166,29 @@ export default function CountdownWidgetGeneratorWidget() {
 </div>
 <script>
   (function() {
-    console.log("[Widget Script] Initializing countdown widget ${widgetId}...");
+    const widgetIdForLog = "${widgetId}";
+    console.log("[Widget Script] (" + widgetIdForLog + ") Initializing countdown widget...");
     const targetDateStr = "${targetDateTime}";
-    console.log("[Widget Script] Raw targetDateStr from config: '", targetDateStr, "'");
+    console.log("[Widget Script] (" + widgetIdForLog + ") Raw targetDateStr from config: '" + targetDateStr + "'");
 
     const widgetContainerElement = document.getElementById('${widgetId}-container');
 
-    if (!targetDateStr) {
-      console.error("Uclock Countdown Widget (${widgetId}): Target date/time string is empty or not provided.");
-      if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Target date/time not set in configuration.</p>";
+    if (!targetDateStr || targetDateStr.trim() === "") {
+      console.error("Uclock Countdown Widget (" + widgetIdForLog + "): Target date/time string is empty or not provided. Received: '" + targetDateStr + "'");
+      if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Target date/time not set in configuration. Received: '" + targetDateStr + "'</p>";
       return;
     }
-
-    const targetDate = new Date(targetDateStr).getTime();
-    console.log("[Widget Script] Parsed targetDate (ms): ", targetDate, " (from string: '", targetDateStr, "')");
-    console.log("[Widget Script] Current client time (ms): ", new Date().getTime());
-
+    
+    console.log("[Widget Script] (" + widgetIdForLog + ") Attempting to parse date from string: '" + targetDateStr + "'");
+    const dateObject = new Date(targetDateStr);
+    console.log("[Widget Script] (" + widgetIdForLog + ") Resulting date object: ", dateObject);
+    const targetDate = dateObject.getTime();
+    console.log("[Widget Script] (" + widgetIdForLog + ") Parsed targetDate (ms): " + targetDate);
+    console.log("[Widget Script] (" + widgetIdForLog + ") Current client time (ms): " + new Date().getTime());
 
     if (isNaN(targetDate)) {
-      console.error("Uclock Countdown Widget (${widgetId}): Invalid target date/time format. Could not parse: '", targetDateStr, "'");
-      if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format ('" + targetDateStr + "'). Please use YYYY-MM-DDTHH:mm.</p>";
+      console.error("Uclock Countdown Widget (" + widgetIdForLog + "): Invalid target date/time format. Could not parse: '" + targetDateStr + "'. Resulting timestamp: " + targetDate);
+      if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format for ('" + targetDateStr + "'). Please ensure it is YYYY-MM-DDTHH:mm. Parsed as: " + dateObject.toString() + "</p>";
       return;
     }
 
@@ -207,23 +209,22 @@ export default function CountdownWidgetGeneratorWidget() {
     if (${showSeconds} && !secondsEl) missingElements.push('seconds display element (span: secondsEl)');
 
     if (missingElements.length > 0) {
-      const errorMsg = "Uclock Countdown Widget (${widgetId}): Could not initialize all required HTML parts. Missing: " + missingElements.join(', ') + ".";
+      const errorMsg = "Uclock Countdown Widget (" + widgetIdForLog + "): Could not initialize all required HTML parts. Missing: " + missingElements.join(', ') + ".";
       console.error(errorMsg);
       if (widgetContainerElement) {
           widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif; font-size: small;'>" + errorMsg + "</p>";
       }
       return;
     }
-    console.log("[Widget Script] All required elements found.");
+    console.log("[Widget Script] (" + widgetIdForLog + ") All required elements found.");
 
     function updateCountdown() {
       const now = new Date().getTime();
       const distance = targetDate - now;
-      // console.log("[Widget Script] updateCountdown: now=", now, "targetDate=", targetDate, "distance=", distance);
-
+      console.log("[Widget Script] (" + widgetIdForLog + ") updateCountdown: now=" + now + ", targetDate=" + targetDate + ", distance=" + distance);
 
       if (distance < 0) {
-        console.log("[Widget Script] Countdown finished or target is in the past.");
+        console.log("[Widget Script] (" + widgetIdForLog + ") Countdown finished or target is in the past.");
         clearInterval(interval);
         if (timerDiv) timerDiv.style.display = 'none';
         if (finishedDiv) finishedDiv.style.display = 'block';
@@ -234,7 +235,7 @@ export default function CountdownWidgetGeneratorWidget() {
       const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((distance % (1000 * 60)) / 1000);
-      // console.log("[Widget Script] Calculated d/h/m/s: ", d,h,m,s);
+      console.log("[Widget Script] (" + widgetIdForLog + ") Calculated d/h/m/s: " + d + "/" + h + "/" + m + "/" + s);
 
       if (${showDays} && daysEl) daysEl.textContent = String(d);
       if (${showHours} && hoursEl) hoursEl.textContent = String(h);
@@ -242,7 +243,7 @@ export default function CountdownWidgetGeneratorWidget() {
       if (${showSeconds} && secondsEl) secondsEl.textContent = String(s);
     }
 
-    console.log("[Widget Script] Starting countdown interval...");
+    console.log("[Widget Script] (" + widgetIdForLog + ") Starting countdown interval...");
     const interval = setInterval(updateCountdown, 1000);
     updateCountdown(); // Initial call to display immediately
   })();
@@ -253,7 +254,6 @@ export default function CountdownWidgetGeneratorWidget() {
 
   useEffect(() => {
     if (config.targetDateTime && config.targetDateTime !== '') {
-      // console.log("[React Log] Generating embed code with targetDateTime:", config.targetDateTime);
       const code = generateEmbedCode(config);
       setEmbedCode(code);
       setPreviewHtml(code);
@@ -476,3 +476,5 @@ export default function CountdownWidgetGeneratorWidget() {
     </div>
   );
 }
+
+    
