@@ -109,7 +109,7 @@ export default function WidgetGeneratorWidget() {
 
     if (currentConfig.clockType === 'digital') {
       const digitalTimeDisplayFont = getFontFamilyCss('Segment7'); 
-      finalMainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: ${currentFontFamilyCss}; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
+      finalMainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: ${currentFontFamilyCss}; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
       finalClockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: ${digitalTimeDisplayFont};"></span>`;
       finalClockScript = `
         const timeElement = document.getElementById('${widgetId}-time');
@@ -138,7 +138,7 @@ export default function WidgetGeneratorWidget() {
         return updateDigitalTime;
       `;
     } else if (currentConfig.clockType === 'sleek') {
-      finalMainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 20px; border-radius: 10px; text-align: center; font-family: ${currentFontFamilyCss}; display: inline-block; min-width: 220px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);`;
+      finalMainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 20px; border-radius: 10px; text-align: center; font-family: ${currentFontFamilyCss}; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1);`;
       finalClockHtml = `
         <div id="${widgetId}-time-container" style="margin-bottom: 10px;">
           <span id="${widgetId}-time" style="font-size: 2.8em; font-weight: bold; line-height: 1.1; display: inline;"></span>
@@ -456,12 +456,12 @@ export default function WidgetGeneratorWidget() {
                  </div>
             ) : (
               <iframe
-                key={embedCode} // Use embedCode as key to force re-render on change
+                key={embedCode} 
                 srcDoc={iframeSrcDoc}
                 title="Widget Preview"
                 sandbox="allow-scripts" 
-                className="w-auto h-auto border-0"
-                style={{minWidth: '180px', minHeight: '80px'}}
+                className="w-full h-auto border-0"
+                style={{maxWidth: '100%', minHeight: '100px'}}
                 scrolling="no"
               />
             )}
@@ -478,7 +478,7 @@ export default function WidgetGeneratorWidget() {
           <Textarea
             value={embedCode}
             readOnly
-            rows={12} // Adjusted for better mobile-friendliness
+            rows={12}
             className="text-xs font-mono bg-muted/50"
             aria-label="Embeddable widget code"
           />
@@ -494,3 +494,6 @@ export default function WidgetGeneratorWidget() {
 
       
 
+
+
+    
