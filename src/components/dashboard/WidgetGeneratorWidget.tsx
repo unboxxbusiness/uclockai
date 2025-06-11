@@ -87,9 +87,10 @@ export default function WidgetGeneratorWidget() {
   }, []);
 
   useEffect(() => {
-    // Only set previewLoading to false if initialization is done and allTimezones are loaded.
     if (initializationDone && allTimezones.length > 0 && config.timezone) {
       setPreviewLoading(false);
+    } else {
+      setPreviewLoading(true); 
     }
   }, [initializationDone, allTimezones, config.timezone]);
 
@@ -229,7 +230,7 @@ export default function WidgetGeneratorWidget() {
     result += `if (window.uclockAiWidgetIntervals['${widgetId}']) { clearInterval(window.uclockAiWidgetIntervals['${widgetId}']); }`;
     result += `window.uclockAiWidgetIntervals['${widgetId}'] = setInterval(updateTimeFunction, 1000);`;
     result += `})();`;
-    result += `<` + `/script>`;
+    result += `<` + `/script>`; // Changed to concatenation
     
     return result.trim();
   }, [initializationDone]); 
@@ -285,10 +286,10 @@ export default function WidgetGeneratorWidget() {
   };
 
   const iframeSrcDoc = useMemo(() => {
-    if (previewLoading || !embedCode.startsWith('<div')) {
-      return \`<html><body style="display:flex; align-items:center; justify-content:center; height:100%;"><div style="display:flex; flex-direction:column; align-items:center; justify-content:center; font-family: Inter, sans-serif; color: #777;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-circle animate-spin" style="margin-bottom: 8px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading Preview...</div></body></html>\`;
+    if (previewLoading || !initializationDone || !allTimezones.length || !config.timezone || !embedCode.startsWith('<div')) {
+      return '<html><body style="display:flex; align-items:center; justify-content:center; height:100%;"><div style="display:flex; flex-direction:column; align-items:center; justify-content:center; font-family: Inter, sans-serif; color: #777;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-circle animate-spin" style="margin-bottom: 8px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Loading Preview...</div></body></html>';
     }
-    return \`
+    return `
       <html>
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -305,11 +306,11 @@ export default function WidgetGeneratorWidget() {
           </style>
         </head>
         <body>
-          \${embedCode}
+          ${embedCode}
         </body>
       </html>
-    \`;
-  }, [embedCode, previewLoading]);
+    `;
+  }, [embedCode, previewLoading, initializationDone, allTimezones, config.timezone]);
 
   return (
     <div className="space-y-8">
@@ -367,7 +368,7 @@ export default function WidgetGeneratorWidget() {
                 <Select 
                     value={config.timezone} 
                     onValueChange={(value) => handleConfigChange('timezone', value)}
-                    disabled={previewLoading}
+                    disabled={previewLoading && (!initializationDone || !allTimezones.length || !config.timezone)}
                 >
                     <SelectTrigger id="timezone">
                     <SelectValue placeholder="Select timezone" />
@@ -448,14 +449,14 @@ export default function WidgetGeneratorWidget() {
         </CardHeader>
         <CardContent>
           <div className="p-4 border rounded-md bg-muted flex items-center justify-center min-h-[150px]">
-            {previewLoading || !embedCode.startsWith('<div') ? (
+            {previewLoading ? (
                  <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin mb-2" />
                     <span className="text-sm">Loading Preview...</span>
                  </div>
             ) : (
               <iframe
-                key={JSON.stringify(config)} 
+                key={embedCode} // Use embedCode as key to force re-render on change
                 srcDoc={iframeSrcDoc}
                 title="Widget Preview"
                 sandbox="allow-scripts" 
@@ -477,7 +478,7 @@ export default function WidgetGeneratorWidget() {
           <Textarea
             value={embedCode}
             readOnly
-            rows={config.clockType === 'sleek' ? 22 : 17} // Adjusted rows for new script length
+            rows={config.clockType === 'sleek' ? 22 : 17}
             className="text-xs font-mono bg-muted/50"
             aria-label="Embeddable widget code"
           />
