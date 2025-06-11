@@ -33,7 +33,7 @@ export default function HolidayFinderWidget() {
   const form = useForm<HolidayFormValues>({
     resolver: zodResolver(HolidayLookupInputSchema),
     defaultValues: {
-      countryCode: 'IN', // Default to India
+      countryCode: 'US', // Default to US
       year: '',
     },
   });

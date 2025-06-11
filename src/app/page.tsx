@@ -1,7 +1,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, Hourglass } from 'lucide-react';
+import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, Hourglass, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import SleekClockDisplay from '@/components/interface/SleekClockDisplay';
 
@@ -25,6 +25,7 @@ const toolCategories = [
     tools: [
       { id: 'worldClock', title: 'World Clock', Icon: Clock, href: '/world-clock', description: 'View current times across different timezones globally.' },
       { id: 'localTimeConverter', title: 'Local Time Converter', Icon: Globe, href: '/local-time-converter', description: 'Convert your local time to any other timezone.' },
+      { id: 'holidayFinder', title: 'Holiday Finder', Icon: CalendarDays, href: '/holiday-finder', description: 'Look up public holidays for different countries and years.' },
     ]
   },
   {
