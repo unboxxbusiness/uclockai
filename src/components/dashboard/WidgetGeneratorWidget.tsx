@@ -478,7 +478,7 @@ export default function WidgetGeneratorWidget() {
           <Textarea
             value={embedCode}
             readOnly
-            rows={config.clockType === 'sleek' ? 22 : 17}
+            rows={12} // Adjusted for better mobile-friendliness
             className="text-xs font-mono bg-muted/50"
             aria-label="Embeddable widget code"
           />
@@ -493,3 +493,4 @@ export default function WidgetGeneratorWidget() {
     
 
       
+

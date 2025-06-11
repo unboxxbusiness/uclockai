@@ -12,7 +12,7 @@ export default function WidgetGeneratorPage() {
         <Button variant="outline" asChild className="mb-6 group">
           <Link href="/">
             <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            Back to Dashboard
+            Back to Home
           </Link>
         </Button>
         <Card className="shadow-xl rounded-xl flex flex-col overflow-hidden bg-card">
@@ -28,3 +28,4 @@ export default function WidgetGeneratorPage() {
     </main>
   );
 }
+
