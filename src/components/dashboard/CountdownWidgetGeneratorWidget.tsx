@@ -44,7 +44,6 @@ const fontOptions = [
   { value: 'Roboto Mono', label: 'Roboto Mono (Monospace)' },
 ];
 
-// Helper function defined outside the component
 const getDefaultTargetDateTime = () => {
   const now = new Date();
   const tomorrow = new Date(now);
@@ -58,7 +57,7 @@ export default function CountdownWidgetGeneratorWidget() {
   const defaultTheme = countdownThemes.find(theme => theme.name === 'Midnight Glow') || countdownThemes[0];
 
   const [config, setConfig] = useState<CountdownWidgetConfig>({
-    targetDateTime: '', // Initialize as empty
+    targetDateTime: '', // Initialize as empty, will be set client-side
     title: 'Countdown!',
     themeName: defaultTheme.name,
     titleColor: defaultTheme.titleColor,
@@ -78,7 +77,7 @@ export default function CountdownWidgetGeneratorWidget() {
     `<div style="font-family: sans-serif; text-align: center; padding: 20px; color: #777;">Initializing settings...</div>`
   );
 
-  // Set initial targetDateTime on client mount
+  // Set initial targetDateTime on client mount to avoid hydration issues
   useEffect(() => {
     setConfig(prev => ({
       ...prev,
@@ -100,7 +99,7 @@ export default function CountdownWidgetGeneratorWidget() {
 
     const containerStyle = `
       background-color: ${backgroundColor};
-      color: ${numberColor};
+      color: ${numberColor}; /* Default text color for the container */
       padding: 20px;
       border-radius: 12px;
       text-align: center;
@@ -113,7 +112,7 @@ export default function CountdownWidgetGeneratorWidget() {
 
     const titleStyle = `
       color: ${titleColor};
-      font-size: 1.5em;
+      font-size: 1.5em; /* Relative font size */
       font-weight: bold;
       margin-bottom: 15px;
     `.trim().replace(/\s\s+/g, ' ');
@@ -121,35 +120,35 @@ export default function CountdownWidgetGeneratorWidget() {
     const timeUnitContainerStyle = `
       display: flex;
       justify-content: center;
-      gap: 10px;
+      gap: 10px; /* Space between D/H/M/S blocks */
     `.trim().replace(/\s\s+/g, ' ');
 
     const timeUnitStyle = `
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 5px;
-      min-width: 50px;
+      padding: 5px; /* Padding within each D/H/M/S block */
+      min-width: 50px; /* Ensure blocks have some width */
     `.trim().replace(/\s\s+/g, ' ');
 
     const numberStyle = `
-      font-size: 2.2em;
+      font-size: 2.2em; /* Relative font size */
       font-weight: bold;
       line-height: 1.1;
       color: ${numberColor};
     `.trim().replace(/\s\s+/g, ' ');
 
     const labelStyle = `
-      font-size: 0.75em;
+      font-size: 0.75em; /* Relative font size */
       text-transform: uppercase;
       color: ${labelColor};
       margin-top: 3px;
     `.trim().replace(/\s\s+/g, ' ');
 
     const finishedMessageStyle = `
-      font-size: 1.8em;
+      font-size: 1.8em; /* Relative font size */
       font-weight: bold;
-      color: ${titleColor};
+      color: ${titleColor}; /* Use title color for finished message */
     `.trim().replace(/\s\s+/g, ' ');
 
     let timeUnitsHtml = '';
@@ -180,14 +179,14 @@ export default function CountdownWidgetGeneratorWidget() {
     }
     
     console.log("[Widget Script] (" + widgetIdForLog + ") Attempting to parse date from string: '" + targetDateStr + "'");
-    const dateObject = new Date(targetDateStr);
-    console.log("[Widget Script] (" + widgetIdForLog + ") Resulting date object: ", dateObject);
+    const dateObject = new Date(targetDateStr); // Standard JS Date parsing
+    console.log("[Widget Script] (" + widgetIdForLog + ") Resulting date object: ", dateObject.toString());
     const targetDate = dateObject.getTime();
     console.log("[Widget Script] (" + widgetIdForLog + ") Parsed targetDate (ms): " + targetDate);
     console.log("[Widget Script] (" + widgetIdForLog + ") Current client time (ms): " + new Date().getTime());
 
     if (isNaN(targetDate)) {
-      console.error("Uclock Countdown Widget (" + widgetIdForLog + "): Invalid target date/time format. Could not parse: '" + targetDateStr + "'. Resulting timestamp: " + targetDate);
+      console.error("Uclock Countdown Widget (" + widgetIdForLog + "): Invalid target date/time format. Could not parse: '" + targetDateStr + "'. Resulting timestamp: " + targetDate + ". Date Object: " + dateObject.toString());
       if (widgetContainerElement) widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif;'>Error: Invalid date format for ('" + targetDateStr + "'). Please ensure it is YYYY-MM-DDTHH:mm. Parsed as: " + dateObject.toString() + "</p>";
       return;
     }
@@ -200,6 +199,7 @@ export default function CountdownWidgetGeneratorWidget() {
     const minutesEl = document.getElementById('${widgetId}-minutes');
     const secondsEl = document.getElementById('${widgetId}-seconds');
 
+    // Element check
     let missingElements = [];
     if (!timerDiv) missingElements.push('timer display area (internal div: timerDiv)');
     if (!finishedDiv) missingElements.push('finished message area (internal div: finishedDiv)');
@@ -209,19 +209,19 @@ export default function CountdownWidgetGeneratorWidget() {
     if (${showSeconds} && !secondsEl) missingElements.push('seconds display element (span: secondsEl)');
 
     if (missingElements.length > 0) {
-      const errorMsg = "Uclock Countdown Widget (" + widgetIdForLog + "): Could not initialize all required HTML parts. Missing: " + missingElements.join(', ') + ".";
+      const errorMsg = "Uclock Countdown Widget (" + widgetIdForLog + "): Could not initialize all required HTML parts. Missing: " + missingElements.join(', ') + ". This might happen if elements for hidden units (e.g. days) are not generated.";
       console.error(errorMsg);
       if (widgetContainerElement) {
           widgetContainerElement.innerHTML = "<p style='color:red; font-family: sans-serif; font-size: small;'>" + errorMsg + "</p>";
       }
       return;
     }
-    console.log("[Widget Script] (" + widgetIdForLog + ") All required elements found.");
+    console.log("[Widget Script] (" + widgetIdForLog + ") All required elements seem to be found or are correctly not expected.");
 
     function updateCountdown() {
       const now = new Date().getTime();
       const distance = targetDate - now;
-      console.log("[Widget Script] (" + widgetIdForLog + ") updateCountdown: now=" + now + ", targetDate=" + targetDate + ", distance=" + distance);
+      // console.log("[Widget Script] (" + widgetIdForLog + ") updateCountdown: now=" + now + ", targetDate=" + targetDate + ", distance=" + distance);
 
       if (distance < 0) {
         console.log("[Widget Script] (" + widgetIdForLog + ") Countdown finished or target is in the past.");
@@ -235,7 +235,7 @@ export default function CountdownWidgetGeneratorWidget() {
       const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((distance % (1000 * 60)) / 1000);
-      console.log("[Widget Script] (" + widgetIdForLog + ") Calculated d/h/m/s: " + d + "/" + h + "/" + m + "/" + s);
+      // console.log("[Widget Script] (" + widgetIdForLog + ") Calculated d/h/m/s: " + d + "/" + h + "/" + m + "/" + s);
 
       if (${showDays} && daysEl) daysEl.textContent = String(d);
       if (${showHours} && hoursEl) hoursEl.textContent = String(h);
@@ -256,8 +256,9 @@ export default function CountdownWidgetGeneratorWidget() {
     if (config.targetDateTime && config.targetDateTime !== '') {
       const code = generateEmbedCode(config);
       setEmbedCode(code);
-      setPreviewHtml(code);
+      setPreviewHtml(code); // The iframe will re-render with new srcDoc
     } else {
+      // Keep showing initializing message until targetDateTime is set by client-side effect
       setEmbedCode('');
       setPreviewHtml(`<div style="font-family: sans-serif; text-align: center; padding: 20px; color: #777;">Initializing settings...</div>`);
     }
@@ -288,7 +289,7 @@ export default function CountdownWidgetGeneratorWidget() {
     setConfig(prev => ({
       ...prev,
       [field]: value,
-      themeName: "Custom"
+      themeName: "Custom" // Switch to custom theme when a color is manually changed
     }));
   };
 
@@ -315,11 +316,11 @@ export default function CountdownWidgetGeneratorWidget() {
             <Input
               id="targetDateTime"
               type="datetime-local"
-              value={config.targetDateTime} // Controlled component
+              value={config.targetDateTime}
               onChange={(e) => handleConfigChange('targetDateTime', e.target.value)}
               className="mt-1"
               required
-              disabled={!config.targetDateTime} // Disable while initial value is being set
+              disabled={!config.targetDateTime} // Disable while initial value is being set by useEffect
             />
           </div>
           <div>
@@ -430,7 +431,7 @@ export default function CountdownWidgetGeneratorWidget() {
           <div className="p-4 border rounded-md bg-muted flex items-center justify-center min-h-[150px]">
             {previewHtml && (
               <iframe
-                key={JSON.stringify(config)}
+                key={previewHtml} // Force re-render of iframe when srcDoc changes
                 srcDoc={`
                   <html>
                     <head>
@@ -445,10 +446,10 @@ export default function CountdownWidgetGeneratorWidget() {
                   </html>
                 `}
                 title="Countdown Widget Preview"
-                sandbox="allow-scripts"
-                className="w-auto h-auto border-0"
-                style={{minWidth: '320px', minHeight: '120px'}}
-                scrolling="no"
+                sandbox="allow-scripts" // allow-scripts is needed for the embedded JS to run
+                className="w-auto h-auto border-0" // Adjust size as needed, or make it scale
+                style={{minWidth: '320px', minHeight: '120px'}} // Ensure iframe has some dimensions
+                scrolling="no" // To prevent scrollbars if content fits
               />
             )}
           </div>
@@ -458,7 +459,7 @@ export default function CountdownWidgetGeneratorWidget() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center"><Code className="mr-2 h-5 w-5" />Embed Code</CardTitle>
-          <CardDescription>Copy and paste this code into your website's HTML.</CardDescription>
+          <CardDescription>Copy and paste this code into your website's HTML. You can further customize styles by editing the inline CSS within the code.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           <Textarea
