@@ -3,6 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Clock, Timer as TimerIcon, Watch, AlarmClock as AlarmClockIcon, ArrowRight, Settings, Globe, Brain, BellRing, Settings2, Wrench, Hourglass, MonitorSmartphone } from 'lucide-react';
 import Link from 'next/link';
+import SleekClockDisplay from '@/components/interface/SleekClockDisplay';
 
 const toolCategories = [
   {
@@ -29,7 +30,7 @@ const toolCategories = [
   {
     id: 'customizationExport',
     name: 'Customization & Export',
-    Icon: Wrench, 
+    Icon: Wrench,
     tools: [
       { id: 'widgetGenerator', title: 'Time Widget Generator', Icon: Settings2, href: '/widget-generator', description: 'Create embeddable time widgets for your website.' },
       { id: 'countdownWidgetGenerator', title: 'Countdown Widget Generator', Icon: Hourglass, href: '/countdown-widget-generator', description: 'Generate countdown timer widgets for events.' },
@@ -40,7 +41,7 @@ const toolCategories = [
     name: 'Display Interfaces',
     Icon: MonitorSmartphone,
     tools: [
-      { id: 'sleekClock', title: 'Sleek Clock Display', Icon: Clock, href: '/sleek-clock', description: 'A modern digital clock interface with date and time.' },
+      { id: 'sleekClock', title: 'Sleek Clock Display Page', Icon: Clock, href: '/sleek-clock', description: 'A dedicated page for the modern digital clock interface.' },
     ]
   }
 ];
@@ -51,7 +52,17 @@ export default function DashboardPage() {
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-headline font-semibold text-foreground mb-2">Dashboard</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Manage your time effectively. Select a category to view tools or use the sidebar for quick navigation.
+          Welcome to Uclock Ai! Your central hub for smart time management.
+        </p>
+      </div>
+
+      <div className="mb-8 max-w-2xl mx-auto">
+        <SleekClockDisplay />
+      </div>
+      
+      <div className="mb-6 text-center">
+         <p className="text-muted-foreground max-w-2xl mx-auto">
+          Select a category below to view available tools or use the sidebar for quick navigation.
         </p>
       </div>
 
