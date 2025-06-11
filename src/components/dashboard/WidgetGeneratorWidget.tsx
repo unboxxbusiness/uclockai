@@ -10,8 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { getTimezones, type TimezoneOption } from '@/lib/timezones';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy } from 'lucide-react';
+import { Copy, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { formatISO, addDays, set } from 'date-fns';
 
 interface WidgetConfig {
   clockType: 'digital' | 'sleek';
@@ -20,8 +21,12 @@ interface WidgetConfig {
   showSeconds: boolean;
   textColor: string;
   backgroundColor: string;
-  fontFamily: 'Inter' | 'Roboto Mono' | 'Segment7';
+  fontFamily: WidgetConfigFontFamily; // Changed to its own type
 }
+
+// Define a specific type for fontFamily to ensure type safety
+type WidgetConfigFontFamily = 'Inter' | 'Roboto Mono' | 'Segment7';
+
 
 const colorThemes = [
   { name: 'Default Blue', textColor: '#FFFFFF', backgroundColor: '#29ABE2' },
@@ -33,11 +38,26 @@ const colorThemes = [
   { name: 'Mint & White', textColor: '#333333', backgroundColor: '#A7F3D0' },
 ];
 
-const fontFamilies = [
+const fontFamilies: { value: WidgetConfigFontFamily; label: string }[] = [
   { value: 'Inter', label: 'Inter (Sans-Serif)' },
   { value: 'Roboto Mono', label: 'Roboto Mono (Monospace)' },
   { value: 'Segment7', label: 'Segment7 (Digital)' },
 ];
+
+const getFontFamilyCss = (fontFamily: WidgetConfigFontFamily): string => {
+  switch (fontFamily) {
+    case 'Inter':
+      return "'Inter', Arial, sans-serif";
+    case 'Roboto Mono':
+      return "'Roboto Mono', monospace";
+    case 'Segment7':
+      // Prioritize Segment7, fallback to Roboto Mono, then generic monospace
+      return "'Segment7', 'Roboto Mono', monospace";
+    default:
+      return "Arial, sans-serif"; // Should not happen with typed fontFamily
+  }
+};
+
 
 export default function WidgetGeneratorWidget() {
   const { toast } = useToast();
@@ -48,30 +68,32 @@ export default function WidgetGeneratorWidget() {
 
   const [config, setConfig] = useState<WidgetConfig>({
     clockType: 'digital',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    timezone: '', // Initialized by useEffect client-side
     hourFormat: '12h',
     showSeconds: true,
     textColor: defaultTheme.textColor,
     backgroundColor: defaultTheme.backgroundColor,
-    fontFamily: 'Inter',
+    fontFamily: 'Segment7', // Default for digital clock
   });
   const [embedCode, setEmbedCode] = useState('');
-  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(true);
 
-  const getFontFamilyCss = (fontFamily: WidgetConfig['fontFamily']): string => {
-    switch (fontFamily) {
-      case 'Inter':
-        return "'Inter', Arial, sans-serif";
-      case 'Roboto Mono':
-        return "'Roboto Mono', monospace";
-      case 'Segment7':
-        return "'Segment7', 'Roboto Mono', monospace"; // Segment7 is primary for digital time
-      default:
-        return "Arial, sans-serif";
-    }
-  };
+  // Client-side initialization for timezone
+  useEffect(() => {
+    // console.log("[WidgetGenerator] Initializing timezone client-side.");
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    setConfig(prev => ({
+      ...prev,
+      timezone: userTimezone,
+    }));
+    setPreviewLoading(false); // Allow preview generation after timezone is set
+  }, []);
+
 
   const generateEmbedCode = useCallback((currentConfig: WidgetConfig): string => {
+    if (!currentConfig.timezone) { // Guard against missing timezone during initial render
+      return "<p>Initializing settings...</p>";
+    }
     const widgetId = `uclock-ai-widget-${Date.now()}`;
     const jsHourFormat = currentConfig.hourFormat === '12h' ? 'true' : 'false';
     const selectedFontFamilyCss = getFontFamilyCss(currentConfig.fontFamily);
@@ -81,7 +103,6 @@ export default function WidgetGeneratorWidget() {
     let mainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: ${selectedFontFamilyCss}; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
 
     if (currentConfig.clockType === 'digital') {
-      // For digital clock, Segment7 should be prioritized if selected for the time element itself.
       const digitalTimeFontFamily = currentConfig.fontFamily === 'Segment7' ? getFontFamilyCss('Segment7') : selectedFontFamilyCss;
       mainContainerStyle = `background-color: ${currentConfig.backgroundColor}; color: ${currentConfig.textColor}; padding: 15px; border-radius: 8px; text-align: center; font-family: ${selectedFontFamilyCss}; display: inline-block; min-width: 150px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
       clockHtml = `<span id="${widgetId}-time" style="font-size: 1.5em; font-weight: bold; font-family: ${digitalTimeFontFamily};"></span>`;
@@ -144,13 +165,20 @@ export default function WidgetGeneratorWidget() {
             
             if (use12HourFormat) {
               const match = formattedTime.match(/(\\S+)\\s?(AM|PM)/i);
-              if (match) {
+              if (match && match[1] && match[2]) {
                 timeElement.textContent = match[1];
                 ampmElement.textContent = match[2];
                 ampmElement.style.display = 'inline';
               } else {
-                timeElement.textContent = formattedTime; // Fallback if regex fails
-                ampmElement.style.display = 'none';
+                // Fallback if regex fails or AM/PM is not part of the string (e.g. for locales that don't produce it)
+                timeElement.textContent = formattedTime.replace(/\\s?(AM|PM)$/i, '').trim();
+                const amPmMatch = formattedTime.match(/(AM|PM)$/i);
+                if (amPmMatch && amPmMatch[1]) {
+                   ampmElement.textContent = amPmMatch[1];
+                   ampmElement.style.display = 'inline';
+                } else {
+                   ampmElement.style.display = 'none';
+                }
               }
             } else {
               timeElement.textContent = formattedTime;
@@ -184,7 +212,7 @@ export default function WidgetGeneratorWidget() {
   (function() {
     const widgetContainer = document.getElementById('${widgetId}-container');
     if (!widgetContainer) {
-      console.error("Uclock Ai Widget: Container element not found.");
+      console.error("Uclock Ai Widget: Container element '${widgetId}-container' not found.");
       return;
     }
     
@@ -194,6 +222,14 @@ export default function WidgetGeneratorWidget() {
 
     if (typeof updateTimeFunction !== 'function') {
        console.error("Uclock Ai Widget: Update function not properly defined for ${currentConfig.clockType} type.");
+       // Display error inside the widget container if possible
+       const errorDisplay = document.createElement('p');
+       errorDisplay.style.color = 'red';
+       errorDisplay.textContent = 'Widget Error: Update function failed.';
+       while (widgetContainer.firstChild) {
+            widgetContainer.removeChild(widgetContainer.firstChild);
+       }
+       widgetContainer.appendChild(errorDisplay);
        return;
     }
 
@@ -207,26 +243,30 @@ export default function WidgetGeneratorWidget() {
   })();
 </script>
     `.trim();
-  }, []);
+  }, [config]); // Changed dependency from [] to [config]
 
   useEffect(() => {
+    if (previewLoading || !config.timezone) { // Don't generate code until timezone is initialized
+      setEmbedCode("<p>Initializing settings...</p>");
+      return;
+    }
+    // console.log("[Generator Effect] Config changed, re-generating embed code. Current config:", JSON.stringify(config, null, 2));
     const code = generateEmbedCode(config);
     setEmbedCode(code);
-    const previewKey = `preview-${JSON.stringify(config)}`; 
-    setPreviewHtml(`<div key="${previewKey}">${code}</div>`);
-  }, [config, generateEmbedCode]);
+    // console.log("[Generator Effect] New embed code generated.");
+  }, [config, generateEmbedCode, previewLoading]);
 
   const handleConfigChange = (field: keyof WidgetConfig, value: any) => {
     setConfig(prev => {
       const newConfig = { ...prev, [field]: value };
-      // If clock type changes to digital, and font is Inter, switch to Segment7 as a sensible default for digital
-      if (field === 'clockType' && value === 'digital' && newConfig.fontFamily === 'Inter') {
-        newConfig.fontFamily = 'Segment7';
+      if (field === 'clockType') {
+        if (value === 'digital' && newConfig.fontFamily !== 'Segment7') {
+          newConfig.fontFamily = 'Segment7';
+        } else if (value === 'sleek' && newConfig.fontFamily === 'Segment7') {
+          newConfig.fontFamily = 'Inter';
+        }
       }
-      // If clock type changes to sleek, and font is Segment7, switch to Inter
-      if (field === 'clockType' && value === 'sleek' && newConfig.fontFamily === 'Segment7') {
-        newConfig.fontFamily = 'Inter';
-      }
+      // console.log('[setConfig updater] newConfig being returned:', JSON.stringify(newConfig));
       return newConfig;
     });
     if (field === 'textColor' || field === 'backgroundColor') {
@@ -257,6 +297,33 @@ export default function WidgetGeneratorWidget() {
       });
   };
 
+  const iframeSrcDoc = useMemo(() => {
+    if (previewLoading) {
+      return `<html><body><p>Initializing settings...</p></body></html>`;
+    }
+    return `
+      <html>
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous">
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+          <style>
+            @font-face {
+              font-family: 'Segment7';
+              src: url('https://cdn.jsdelivr.net/gh/thefoxy131/fonts@main/segment7/Segment7Standard.otf') format('opentype');
+              font-weight: normal;
+              font-style: normal;
+            }
+            body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100px; background-color: transparent; }
+          </style>
+        </head>
+        <body>
+          ${embedCode}
+        </body>
+      </html>
+    `;
+  }, [embedCode, previewLoading]);
+
   return (
     <div className="space-y-8">
       <Card>
@@ -281,11 +348,18 @@ export default function WidgetGeneratorWidget() {
             </div>
             <div>
               <Label htmlFor="fontFamily">Font Family</Label>
-              <Select value={config.fontFamily} onValueChange={(value) => handleConfigChange('fontFamily', value as WidgetConfig['fontFamily'])}>
+              <Select 
+                value={config.fontFamily} 
+                onValueChange={(value) => handleConfigChange('fontFamily', value as WidgetConfigFontFamily)}
+              >
                 <SelectTrigger id="fontFamily"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {fontFamilies.map(font => (
-                    <SelectItem key={font.value} value={font.value} disabled={config.clockType === 'sleek' && font.value === 'Segment7'}>
+                    <SelectItem 
+                      key={font.value} 
+                      value={font.value} 
+                      disabled={(config.clockType === 'sleek' && font.value === 'Segment7')}
+                    >
                       {font.label}
                     </SelectItem>
                   ))}
@@ -297,14 +371,26 @@ export default function WidgetGeneratorWidget() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="timezone">Timezone</Label>
-              <Select value={config.timezone} onValueChange={(value) => handleConfigChange('timezone', value)}>
-                <SelectTrigger id="timezone"><SelectValue placeholder="Select timezone" /></SelectTrigger>
-                <SelectContent>
-                  {allTimezones.map((tz: TimezoneOption) => (
-                    <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {previewLoading ? (
+                 <div className="flex items-center justify-center h-10 border rounded-md bg-muted">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                 </div>
+              ) : (
+                <Select 
+                    value={config.timezone} 
+                    onValueChange={(value) => handleConfigChange('timezone', value)}
+                    disabled={!allTimezones.length}
+                >
+                    <SelectTrigger id="timezone">
+                    <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                    {allTimezones.map((tz: TimezoneOption) => (
+                        <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+              )}
             </div>
             <div>
               <Label htmlFor="hourFormat">Hour Format</Label>
@@ -374,34 +460,18 @@ export default function WidgetGeneratorWidget() {
         </CardHeader>
         <CardContent>
           <div className="p-4 border rounded-md bg-muted flex items-center justify-center min-h-[150px]">
-            {previewHtml && (
+            {previewLoading ? (
+                 <div className="flex items-center justify-center h-full">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                 </div>
+            ) : (
               <iframe
-                key={JSON.stringify(config)} 
-                srcDoc={`
-                  <html>
-                    <head>
-                      <link rel="preconnect" href="https://fonts.googleapis.com">
-                      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-                      <style>
-                        @font-face {
-                          font-family: 'Segment7';
-                          src: url('https://cdn.jsdelivr.net/gh/thefoxy131/fonts@main/segment7/Segment7Standard.otf') format('opentype');
-                          font-weight: normal;
-                          font-style: normal;
-                        }
-                        body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100px; background-color: transparent; }
-                      </style>
-                    </head>
-                    <body>
-                      ${embedCode}
-                    </body>
-                  </html>
-                `}
+                key={JSON.stringify(config)} // Force re-render on config change
+                srcDoc={iframeSrcDoc}
                 title="Widget Preview"
                 sandbox="allow-scripts" 
                 className="w-auto h-auto border-0"
-                style={{minWidth: '180px', minHeight: '80px'}} // Adjusted minHeight
+                style={{minWidth: '180px', minHeight: '80px'}}
                 scrolling="no"
               />
             )}
@@ -418,7 +488,7 @@ export default function WidgetGeneratorWidget() {
           <Textarea
             value={embedCode}
             readOnly
-            rows={config.clockType === 'sleek' ? 20 : 15} // More rows for sleek due to more script lines
+            rows={config.clockType === 'sleek' ? 20 : 15}
             className="text-xs font-mono bg-muted/50"
             aria-label="Embeddable widget code"
           />
